@@ -6,6 +6,5 @@ setup(
     packages=find_packages(),
     description='Noise Synthesis Library using the Kullback-Leibler Divergence',
     long_description=open('README.md').read(),
-    url='http://url-do-projeto.com',
     author='Gabriel Lisboa, Fabio Oliveira',
 )
