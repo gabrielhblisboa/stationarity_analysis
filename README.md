@@ -2,7 +2,7 @@
 
 This is an experimental library that uses the Kullback-Leibler 
 Divergence to explore noise data synthesis and stationarity
-analysis. Currently Work In Progress
+analysis. Currently Work In Progress.
 
 ## Installation
 
