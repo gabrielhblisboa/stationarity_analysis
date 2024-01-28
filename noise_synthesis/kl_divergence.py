@@ -49,7 +49,7 @@ def sliding_window(noise, num_samples, novelty, window_size):
 
         kl_div = std(window1, window2, 100)
         kl_divergences.append(kl_div)
-        eq_sample.append(start)
+        eq_sample.append(start + step)
 
     return kl_divergences, eq_sample
 
@@ -63,6 +63,8 @@ def blocks(noise, num_samples, step, n_bins, num_blocks, syn_type='std'):
 
     alphas = np.linspace(0.5, 1, num_blocks)
 
+    eq_sample = []
+
     for n in range(0, num_samples - step, step):
 
         window1 = noise[n:n + step]
@@ -73,13 +75,17 @@ def blocks(noise, num_samples, step, n_bins, num_blocks, syn_type='std'):
 
         aux = []
 
+        block_sample = n + step
+
         for i in range(num_blocks):
             if syn_type == 'inv':
                 aux.append(std(blocks1[-i], blocks2[i], n_bins))
             elif syn_type == 'weights':
                 aux.append(alphas[-i] * std(blocks1[-i], blocks2[i], n_bins))
             elif syn_type == 'prog':
+                block_sample += len(blocks1[i])
                 kl_result.append(std(blocks1[i], blocks2[0], n_bins))
+                eq_sample.append(block_sample)
             elif syn_type == 'std':
                 aux.append(std(blocks1[i], blocks2[i], n_bins))
             else:
@@ -89,5 +95,6 @@ def blocks(noise, num_samples, step, n_bins, num_blocks, syn_type='std'):
             continue
         else:
             kl_result.append(np.sum(aux))
+            eq_sample.append(n + step)
 
-    return kl_result
+    return kl_result, eq_sample
