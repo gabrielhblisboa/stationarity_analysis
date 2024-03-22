@@ -1,6 +1,7 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
+
+import scipy
 
 """
 The three following functions represent the three main methods to calculate the KL Divergency of a certain noise.
@@ -46,14 +47,13 @@ def estimate_pdf(window1, window2, n_bins, pdf_type):
     return x1_dist, x2_dist
 
 
-def kl_std(x1, x2, n_bins, pdf_type):
+def jensen_shannon(x1, x2, n_bins, pdf_type):
 
     x1_dist, x2_dist = estimate_pdf(x1, x2, n_bins, pdf_type)
 
-    result = np.zeros_like(x1_dist)
-    for i in range(len(x1_dist)):
-        result[i] = x1_dist[i] * np.log(x1_dist[i] / x2_dist[i])
-    return np.sum(result)
+    result = scipy.spatial.distance.jensenshannon(x1_dist, x2_dist)
+
+    return result
 
 
 def kl_sliding_window(noise, num_samples, novelty, window_size, pdf_type):
@@ -67,7 +67,7 @@ def kl_sliding_window(noise, num_samples, novelty, window_size, pdf_type):
         window1 = noise[start:start + window_size]
         window2 = noise[start + step:start + step + window_size]
 
-        kl_div = kl_std(window1, window2, 100, pdf_type)
+        kl_div = jensen_shannon(window1, window2, 100, pdf_type)
         kl_divergences.append(kl_div)
         eq_sample.append(start + step)
 
@@ -99,15 +99,15 @@ def kl_blocks(noise, num_samples, step, n_bins, num_blocks, pdf_type, syn_type='
 
         for i in range(num_blocks):
             if syn_type == 'inv':
-                aux.append(kl_std(blocks1[-i], blocks2[i], n_bins, pdf_type))
+                aux.append(jensen_shannon(blocks1[-i], blocks2[i], n_bins, pdf_type))
             elif syn_type == 'weights':
-                aux.append(alphas[-i] * kl_std(blocks1[-i], blocks2[i], n_bins, pdf_type))
+                aux.append(alphas[-i] * jensen_shannon(blocks1[-i], blocks2[i], n_bins, pdf_type))
             elif syn_type == 'prog':
                 block_sample += len(blocks1[i])
-                kl_result.append(kl_std(blocks1[i], blocks2[0], n_bins, pdf_type))
+                kl_result.append(jensen_shannon(blocks1[i], blocks2[0], n_bins, pdf_type))
                 eq_sample.append(block_sample)
             elif syn_type == 'std':
-                aux.append(kl_std(blocks1[i], blocks2[i], n_bins, pdf_type))
+                aux.append(jensen_shannon(blocks1[i], blocks2[i], n_bins, pdf_type))
             else:
                 raise ValueError("'blocks' function argument 'syn_type' value not listed:", syn_type)
 

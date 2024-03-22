@@ -104,7 +104,7 @@ def estimate_spectrum(signal: np.array, window_size: int = 1024, overlap: float 
     fft_result = np.zeros(window_size//2)
     fft_freq = np.fft.fftfreq(window_size, 1/fs)[:window_size//2]
 
-    i=0
+    i = 0
     n_means = 0
     while i + novelty_samples + window_size <= n_samples:
         fft_result = fft_result + np.abs(np.fft.fft(

@@ -11,13 +11,16 @@ import noise_mod
 
 def main():
 
+    pdf_type = 'std'
+    est_type = 'kl'
+
     fs = 48000  # Example sampling frequency
     n_samples = 5 * fs  # Five seconds of noise
 
     sub_dir = 'pink-noise'
 
     # Set up the directory for saving results
-    base_dir = f"./result/{sub_dir}"
+    base_dir = f"./result/{sub_dir}/{est_type}"
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
 
@@ -33,7 +36,7 @@ def main():
 
     pink_noise = syn_bg.generate_noise(frequencies, intensities, n_samples, fs)
 
-    calculate_kl(pink_noise, n_samples, 'Pink', 'std', sub_dir)
+    calculate_kl(pink_noise, n_samples, 'Pink', 'std', sub_dir, pdf_type=pdf_type, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_std_audio.wav"
 
@@ -56,7 +59,7 @@ def main():
     aux2 = np.append(aux1, block3)
     mult_noise = np.append(aux2, block4)
 
-    calculate_kl(mult_noise, n_samples, 'Pink', 'mult', sub_dir)
+    calculate_kl(mult_noise, n_samples, 'Pink', 'mult', sub_dir, pdf_type=pdf_type, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_mult_audio.wav"
 
@@ -79,8 +82,8 @@ def main():
     mod_noise[transition_start:transition_end] = (
             mod_noise[transition_start:transition_end] * 3)
 
-    calculate_kl(mod_noise, n_samples, 'Pink', 'amp-var', sub_dir,
-                 transition_start=transition_start, transition_end=transition_end)
+    calculate_kl(mod_noise, n_samples, 'Pink', 'amp-var', sub_dir, pdf_type=pdf_type,
+                 transition_start=transition_start, transition_end=transition_end, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_amp-var_audio.wav"
 
@@ -89,7 +92,7 @@ def main():
 
     # Pink Noise with amplitude variation (linear transition) -------------------------------------------------------
     mod_noise = noise_mod.transition(pink_noise, n_samples, 'linear')
-    calculate_kl(mod_noise, n_samples, 'Pink', 'linear-trans', sub_dir)
+    calculate_kl(mod_noise, n_samples, 'Pink', 'linear-trans', sub_dir, pdf_type=pdf_type, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_linear-trans_audio.wav"
 
@@ -98,7 +101,7 @@ def main():
 
     # # Pink noise with amplitude variation (sin transition) ---------------------------------------------------------
     mod_noise = noise_mod.transition(pink_noise, n_samples, 'sin')
-    calculate_kl(mod_noise, n_samples, 'Pink', 'sin-trans', sub_dir)
+    calculate_kl(mod_noise, n_samples, 'Pink', 'sin-trans', sub_dir, pdf_type=pdf_type, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_sin-trans_audio.wav"
 
@@ -108,7 +111,7 @@ def main():
     pink_noise[int(n_samples * 0.4):int(n_samples * 0.6)] = (
             pink_noise[int(n_samples * 0.4):int(n_samples * 0.6)][::-1])
 
-    calculate_kl(pink_noise, n_samples, 'Pink', 'inv', sub_dir)
+    calculate_kl(pink_noise, n_samples, 'Pink', 'inv', sub_dir, pdf_type=pdf_type, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_inv_audio.wav"
 
