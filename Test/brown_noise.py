@@ -14,7 +14,7 @@ def main():
     fs = 48000  # Example sampling frequency
     n_samples = 5 * fs  # Five seconds of noise
 
-    est_type = 'wasserstein'
+    est_type = 'jensen-shannon'
 
     sub_dir = 'brown-noise'
 

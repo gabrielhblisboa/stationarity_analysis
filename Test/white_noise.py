@@ -15,9 +15,10 @@ def main():
     n_samples = 5 * fs  # Five seconds of noise
 
     sub_dir = 'white-noise'
+    est_type = 'jensen-shannon'
 
     # Set up the directory for saving results
-    base_dir = f"./result/{sub_dir}"
+    base_dir = f"./result/{sub_dir}/{est_type}"
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
 
@@ -33,7 +34,7 @@ def main():
             mod_noise[transition_start:transition_end] * 3)
 
     calculate_kl(mod_noise, n_samples, 'White', 'amp-var', sub_dir,
-                 transition_start=transition_start, transition_end=transition_end)
+                 transition_start=transition_start, transition_end=transition_end, est_type=est_type)
 
     out_wav = f"{base_dir}/white_noise_amp-var_audio.wav"
 
@@ -42,7 +43,7 @@ def main():
 
     # White Noise with amplitude variation (linear transition) -------------------------------------------------------
     mod_noise = noise_mod.transition(white_noise, n_samples, 'linear')
-    calculate_kl(mod_noise, n_samples, 'White', 'linear-trans', sub_dir)
+    calculate_kl(mod_noise, n_samples, 'White', 'linear-trans', sub_dir, est_type=est_type)
 
     out_wav = f"{base_dir}/white_noise_linear-trans_audio.wav"
 
@@ -51,7 +52,7 @@ def main():
 
     # # White noise with amplitude variation (sin transition) ---------------------------------------------------------
     mod_noise = noise_mod.transition(white_noise, n_samples, 'sin')
-    calculate_kl(mod_noise, n_samples, 'White', 'sin-trans', sub_dir)
+    calculate_kl(mod_noise, n_samples, 'White', 'sin-trans', sub_dir, est_type=est_type)
 
     out_wav = f"{base_dir}/white_noise_sin-trans_audio.wav"
 
@@ -61,7 +62,7 @@ def main():
     white_noise[int(n_samples * 0.4):int(n_samples * 0.6)] = (
             white_noise[int(n_samples * 0.4):int(n_samples * 0.6)][::-1])
 
-    calculate_kl(white_noise, n_samples, 'White', 'inv', sub_dir)
+    calculate_kl(white_noise, n_samples, 'White', 'inv', sub_dir, est_type=est_type)
 
     out_wav = f"{base_dir}/white_noise_inv_audio.wav"
 
