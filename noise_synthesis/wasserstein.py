@@ -23,33 +23,38 @@ blocks: the windows are divided into a given number of blocks. There are four di
 def estimate_pdf(window1, window2, n_bins, pdf_type):
 
     if pdf_type == 'fft':
-        # Calcula a FFT de x1 e x2
         fft_x1 = np.fft.fft(window1)
         fft_x2 = np.fft.fft(window2)
 
-        # Calcula a magnitude da FFT
-        x1 = np.abs(fft_x1)
-        x2 = np.abs(fft_x2)
+        x1_dist = np.abs(fft_x1)
+        x2_dist = np.abs(fft_x2)
+
+        x1_dist = np.where(x1_dist == 0, 1e-10, x1_dist)
+        x2_dist = np.where(x2_dist == 0, 1e-10, x2_dist)
+
+        min_length = min(len(x1_dist), len(x2_dist))
+
+        x1_dist = x1_dist[:min_length]
+        x2_dist = x2_dist[:min_length]
+
+        edges = 0
     else:
-        x1 = window1
-        x2 = window2
+        min_value = np.min([np.min(window1), np.min(window2)])
+        max_value = np.max([np.max(window1), np.max(window2)])
+        bins = np.linspace(min_value, max_value, n_bins)
 
-    min_value = np.min([np.min(x1), np.min(x2)])
-    max_value = np.max([np.max(x1), np.max(x2)])
-    bins = np.linspace(min_value, max_value, n_bins)
+        x1_dist, edges = np.histogram(window1, bins=bins, density=True)
+        x2_dist, edges = np.histogram(window2, bins=bins, density=True)
 
-    x1_dist, edges = np.histogram(window1, bins=bins, density=True)
-    x2_dist, edges = np.histogram(window2, bins=bins, density=True)
+        x1_dist = np.where(x1_dist == 0, 1e-10, x1_dist)
+        x2_dist = np.where(x2_dist == 0, 1e-10, x2_dist)
 
-    x1_dist = np.where(x1_dist == 0, 1e-10, x1_dist)
-    x2_dist = np.where(x2_dist == 0, 1e-10, x2_dist)
-
-    return x1_dist, x2_dist
+    return x1_dist, x2_dist, edges
 
 
 def wasserstein(x1, x2, n_bins, pdf_type):
 
-    x1_dist, x2_dist = estimate_pdf(x1, x2, n_bins, pdf_type)
+    x1_dist, x2_dist, edges = estimate_pdf(x1, x2, n_bins, pdf_type)
 
     result = scipy.stats.wasserstein_distance(x1_dist, x2_dist)
 

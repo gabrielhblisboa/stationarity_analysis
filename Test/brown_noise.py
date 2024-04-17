@@ -79,7 +79,7 @@ def main():
     mod_noise = brown_noise
 
     mod_noise[transition_start:transition_end] = (
-            mod_noise[transition_start:transition_end] * 100)
+            mod_noise[transition_start:transition_end] * 10)
 
     calculate_kl(mod_noise, n_samples, 'Brown', 'amp-var', sub_dir,
                  transition_start=transition_start, transition_end=transition_end, est_type=est_type)

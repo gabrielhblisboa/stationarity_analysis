@@ -1,6 +1,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.special
+import scipy.signal as sgn
 
 """
 The three following functions represent the three main methods to calculate the KL Divergency of a certain noise.
@@ -22,38 +24,52 @@ blocks: the windows are divided into a given number of blocks. There are four di
 def estimate_pdf(window1, window2, n_bins, pdf_type):
 
     if pdf_type == 'fft':
-        # Calcula a FFT de x1 e x2
+
         fft_x1 = np.fft.fft(window1)
         fft_x2 = np.fft.fft(window2)
 
-        # Calcula a magnitude da FFT
-        x1 = np.abs(fft_x1)
-        x2 = np.abs(fft_x2)
+        x1_dist = np.abs(fft_x1)
+        x2_dist = np.abs(fft_x2)
+
+        x1_dist = np.where(x1_dist == 0, 1e-10, x1_dist)
+        x2_dist = np.where(x2_dist == 0, 1e-10, x2_dist)
+
+        edges = 0
+
+        # plt.plot(x1_dist)
+        # plt.plot(x2_dist)
+        # plt.xscale('log')
+        # plt.show()
+
     else:
-        x1 = window1
-        x2 = window2
+        min_value = np.min([np.min(window1), np.min(window2)])
+        max_value = np.max([np.max(window1), np.max(window2)])
+        bins = np.linspace(min_value, max_value, n_bins)
 
-    min_value = np.min([np.min(x1), np.min(x2)])
-    max_value = np.max([np.max(x1), np.max(x2)])
-    bins = np.linspace(min_value, max_value, n_bins)
+        x1_dist, edges = np.histogram(window1, bins=bins, density=True)
+        x2_dist, edges = np.histogram(window2, bins=bins, density=True)
 
-    x1_dist, edges = np.histogram(window1, bins=bins, density=True)
-    x2_dist, edges = np.histogram(window2, bins=bins, density=True)
+        x1_dist = np.where(x1_dist == 0, 1e-10, x1_dist)
+        x2_dist = np.where(x2_dist == 0, 1e-10, x2_dist)
 
-    x1_dist = np.where(x1_dist == 0, 1e-10, x1_dist)
-    x2_dist = np.where(x2_dist == 0, 1e-10, x2_dist)
-
-    return x1_dist, x2_dist
+    return x1_dist, x2_dist, edges
 
 
 def kl_std(x1, x2, n_bins, pdf_type):
 
-    x1_dist, x2_dist = estimate_pdf(x1, x2, n_bins, pdf_type)
+    x1_dist, x2_dist, edges = estimate_pdf(x1, x2, n_bins, pdf_type)
+
+    # print(len(x1_dist))
+    # print(len(x2_dist))
 
     result = np.zeros_like(x1_dist)
-    for i in range(len(x1_dist)):
+    for i in range(len(x2_dist)):
         result[i] = x1_dist[i] * np.log(x1_dist[i] / x2_dist[i])
     return np.sum(result)
+
+    # result = scipy.special.kl_div(x1_dist, x2_dist)
+
+    # return result
 
 
 def kl_sliding_window(noise, num_samples, novelty, window_size, pdf_type):
@@ -118,3 +134,13 @@ def kl_blocks(noise, num_samples, step, n_bins, num_blocks, pdf_type, syn_type='
             eq_sample.append(n + step)
 
     return kl_result, eq_sample
+
+
+def normalize(x, type=0):
+    if type == 0: # normalize between 0 and 1
+        return (x - np.min(x, axis=0))/(np.max(x, axis=0) - np.min(x, axis=0))
+    if type == 1: # normalize -1 e 1, keeping 0 in place (librosa.util.normalize)
+        return x/np.max(np.abs(x), axis=0)
+    if type == 2:
+        return x/np.linalg.norm(x, axis=0)
+    raise UnboundLocalError("normalization {:d} not implemented".format(type))

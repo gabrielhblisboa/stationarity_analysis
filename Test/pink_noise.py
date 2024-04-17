@@ -12,7 +12,7 @@ import noise_mod
 def main():
 
     pdf_type = 'std'
-    est_type = 'jensen-shannon'
+    est_type = 'kl'
 
     fs = 48000  # Example sampling frequency
     n_samples = 5 * fs  # Five seconds of noise

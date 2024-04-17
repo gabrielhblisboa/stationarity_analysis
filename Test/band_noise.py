@@ -14,7 +14,7 @@ import scipy.fftpack
 def test_noise(band_noise, n_samples, fs, noise_type):
 
     pdf_type = 'std'
-    est_type = 'jensen-shannon'
+    est_type = 'wasserstein'
 
     sub_dir = noise_type
 
@@ -203,26 +203,12 @@ def main():
     # Gerando os pontos de divisão
     divisions = np.logspace(np.log10(min_freq), np.log10(max_freq), num=5)
 
-    # Separando as frequências em 4 listas
-    list1 = frequencies[frequencies <= divisions[1]]
-    list2 = frequencies[(frequencies > divisions[1]) & (frequencies <= divisions[2])]
-    list3 = frequencies[(frequencies > divisions[2]) & (frequencies <= divisions[3])]
-    list4 = frequencies[frequencies > divisions[3]]
-
-    # intensities_low = list1
-    # intensities_low_mid = list2
-    # intensities_mid_high = list3
-    # intensities_high = list4
-
-    # # Gera um array de frequências logaritmicamente espaçadas de 20 Hz até a frequência de Nyquist
-    # frequencies = np.logspace(np.log10(20), np.log10(fs / 2), num=100)
-    #
     # Inicializa o array de intensidades com -100 dB para todas as frequências
     intensities_low = np.full_like(frequencies, -100.0)  # -100 dB representa uma atenuação muito alta
     intensities_low_mid = np.full_like(frequencies, -100.0)
     intensities_mid_high = np.full_like(frequencies, -100.0)
     intensities_high = np.full_like(frequencies, -100.0)
-    #
+
     intensities_low[frequencies <= divisions[1]] = 0  # 0 dB
     intensities_low_mid[(frequencies > divisions[1]) & (frequencies <= divisions[2])] = 0  # 0 dB
     intensities_mid_high[(frequencies > divisions[2]) & (frequencies <= divisions[3])] = 0  # 0 dB
