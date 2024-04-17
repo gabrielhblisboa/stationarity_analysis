@@ -2,7 +2,9 @@
 
 This is an experimental library that uses the Kullback-Leibler 
 Divergence to explore noise data synthesis and stationarity
-analysis. Currently Work In Progress.
+analysis. Also added functions to test the Wasserstein Distance
+and the Jensen-Shannon Divergence compared to the KL Divergence.
+Currently Work In Progress.
 
 ## Installation
 
