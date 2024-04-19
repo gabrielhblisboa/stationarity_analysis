@@ -26,7 +26,7 @@ def main():
     pink_noise = syn_bg.generate_noise(frequencies, intensities_pink, n_samples, fs)
     brown_noise = syn_bg.generate_noise(frequencies, intensities_brown, n_samples, fs)
 
-    fft_freq, fft_result = syn_bg.estimate_spectrum(pink_noise, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq, fft_result = syn_bg.psd(pink_noise, int(n_samples / 100), overlap=0.5, fs=fs)
 
     plt.style.use('dark_background')
     fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(10, 8))
@@ -42,7 +42,7 @@ def main():
 
     ax[2].semilogx(fft_freq, fft_result, label='Pink Noise', color='hotpink')
 
-    fft_freq, fft_result = syn_bg.estimate_spectrum(brown_noise, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq, fft_result = syn_bg.psd(brown_noise, int(n_samples / 100), overlap=0.5, fs=fs)
     ax[2].semilogx(fft_result, label='Brown Noise', color='brown')
 
     ax[2].set_xlabel('Frequency (Hz)')

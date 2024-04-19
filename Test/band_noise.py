@@ -132,21 +132,21 @@ def test_generate_noise():
     noise_low = syn_bg.generate_noise(frequencies, intensities_low, n_samples, fs)
 
     # Aplicando FFT ao ruído gerado
-    fft_freq_low, fft_result_low = syn_bg.estimate_spectrum(noise_low, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq_low, fft_result_low = syn_bg.psd(noise_low, int(n_samples / 100), overlap=0.5, fs=fs)
 
     # Low-Mid Freq
     noise_low_mid = syn_bg.generate_noise(frequencies, intensities_low_mid, n_samples, fs)
     fft_freq_low_mid, fft_result_low_mid = (
-        syn_bg.estimate_spectrum(noise_low_mid, int(n_samples / 100), overlap=0.5, fs=fs))
+        syn_bg.psd(noise_low_mid, int(n_samples / 100), overlap=0.5, fs=fs))
 
     # Mid-High Freq
     noise_mid_high = syn_bg.generate_noise(frequencies, intensities_mid_high, n_samples, fs)
     fft_freq_mid_high, fft_result_mid_high = (
-        syn_bg.estimate_spectrum(noise_mid_high, int(n_samples / 100), overlap=0.5, fs=fs))
+        syn_bg.psd(noise_mid_high, int(n_samples / 100), overlap=0.5, fs=fs))
 
     # High
     noise_high = syn_bg.generate_noise(frequencies, intensities_high, n_samples, fs)
-    fft_freq_high, fft_result_high = syn_bg.estimate_spectrum(noise_high, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq_high, fft_result_high = syn_bg.psd(noise_high, int(n_samples / 100), overlap=0.5, fs=fs)
 
     print(noise_low)
     plt.plot(noise_low)

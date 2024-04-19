@@ -41,7 +41,7 @@ def main():
     noise = syn_bg.generate_noise(frequencies, desired_spectrum, n_samples, fs)
 
     # Estimate the spectrum of the generated noise
-    fft_freq, fft_result = syn_bg.estimate_spectrum(noise, n_samples / 100, overlap=0.5, fs=fs)
+    fft_freq, fft_result = syn_bg.psd(signal=noise, fs=fs, window_size=4096, overlap=0.5)
 
     # Plot and save the spectra for comparison
     plt.figure(figsize=(12, 6))
@@ -60,6 +60,7 @@ def main():
     print(f"\tMean error: {np.mean(desired_spectrum) - np.mean(fft_result):.2f} dB ref 1μPa @1m/Hz")
     print(f"Data and spectrum exported in {base_dir}")
 
+    scipy_wav.write(output_file, fs, noise)
 
 if __name__ == "__main__":
     main()

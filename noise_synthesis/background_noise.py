@@ -3,12 +3,12 @@ import numpy as np
 import scipy.signal as scipy
 
 
-def generate_noise(frequencies: np.array, intensities: np.array, n_samples: int, fs: float) -> np.array:
+def generate_noise(frequencies: np.array, psd_db: np.array, n_samples: int, fs: float) -> np.array:
     """Generate background noise based on frequency and intensity information.
 
     Args:
         frequencies (np.array): Array of frequency values.
-        intensities (np.array): Array of intensity values in dB/√Hz.
+        psd_db (np.array): Array of Power Spectral Density (PSD) values in dB ref 1μPa @1m/√Hz.
         n_samples (int): Number of samples to generate.
         fs (float): Sampling frequency.
 
@@ -20,7 +20,7 @@ def generate_noise(frequencies: np.array, intensities: np.array, n_samples: int,
 
     """
 
-    if len(frequencies) != len(intensities):
+    if len(frequencies) != len(psd_db):
         raise UnboundLocalError("for generate_noise frequencies and intensities must have the same length")
 
     # garantindo que as frequências inseridas contenham as frequência 0 e fs/2 (exigido pela scipy.firwin2)
@@ -29,94 +29,92 @@ def generate_noise(frequencies: np.array, intensities: np.array, n_samples: int,
     if index > 0:
         if frequencies[index - 1] == (fs / 2):
             frequencies = frequencies[:index]
-            intensities = intensities[:index]
+            psd_db = psd_db[:index]
         else:
             f = fs / 2
-            i = intensities[index - 1] + (intensities[index] - intensities[index - 1]) * (
+            i = psd_db[index - 1] + (psd_db[index] - psd_db[index - 1]) * (
                         f - frequencies[index - 1]) / (frequencies[index] - frequencies[index - 1])
 
             frequencies = np.append(frequencies[:index], f)
-            intensities = np.append(intensities[:index], i)
+            psd_db = np.append(psd_db[:index], i)
     else:
         if frequencies[-1] != (fs / 2):
             f = fs / 2
-            i = intensities[-1] + (intensities[-1] - intensities[-2]) * (f - frequencies[-2]) / (
+            i = psd_db[-1] + (psd_db[-1] - psd_db[-2]) * (f - frequencies[-2]) / (
                         frequencies[-1] - frequencies[-2])
 
             frequencies = np.append(frequencies, f)
-            intensities = np.append(intensities, i)
+            psd_db = np.append(psd_db, i)
 
     if frequencies[0] != 0:
         frequencies = np.append(0, frequencies)
-        intensities = np.append(intensities[0], intensities)
+        psd_db = np.append(psd_db[0], psd_db)
 
-    # normalizando frequências entre 0 e 1
-    if np.max(frequencies) > 1:
-        frequencies = frequencies / (fs / 2)
 
-    order = 2049
-    noise = np.random.normal(0, 1.13, n_samples + order)
-    # 1.13 ajustado manualmente com base na aplicação de teste background_noise.py para compensar um offset
+    psd_linear = 10 ** ((psd_db) / 20) # passando de dB para linear
+
+    # calculando a potência total de ruído branco com psd equivalente a maior psd do sinal
+    #    P = ∫ ​psd df  para o ruído branco => P = psd * Δf = psd * fs/2
+    max_power = np.max(psd_linear) * fs/2
+
+    # calculando o desvio padrão para a potência calculada
+    #   potencia é => P = E[x^2]
+    #   desvio padrão é => std = √(var(x)) = √(E[(x-μ)^2])
+    #       como média (μ) é zero
+    #       std = √P
+    std_dev = np.sqrt(max_power)
+
+    order = 1025
+    noise = np.random.normal(0, std_dev, n_samples + order)
     # gerando mais amostras que o desejado para eliminar a resposta transiente do filtro
 
-    intensities = 10 ** ((intensities) / 20)
+    # normalizando frequências entre 0 e 1(fs/2)
+    if np.max(frequencies) > 1:
+        frequencies = frequencies / (fs / 2)
+    # normalizando ganho para cada psd
+    intensities_norm = psd_linear/np.max(psd_linear)
 
-    coeficient = scipy.firwin2(order, frequencies, intensities, antisymmetric=False)
+    coeficient = scipy.firwin2(order, frequencies, np.sqrt(intensities_norm), antisymmetric=False)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.firwin2.html
     # antisymmetric=False, order=odd
     # filtro tipo 1 para que as frequências fs/2 e 0 não tenham que ser 0
-
-    filter_gain = np.sum(coeficient)
-    zeros, poles, gain = scipy.tf2zpk(coeficient, 1)
-
-    # Imprimir resultados
-    print("Ganho do filtro:", filter_gain)
-    print("Zeros do filtro:", zeros)
-    print("Polos do filtro:", poles)
-    print("Ganho da função de transferência:", gain)
 
     out_noise = scipy.lfilter(coeficient, 1, noise)
     return out_noise[order:]
 
 
-def estimate_spectrum(signal: np.array, window_size: int = 1024, overlap: float = 0.5, fs: float = 48000) \
+def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0.5) \
         -> [np.array, np.array]:
-    """Estimate the medium spectrum based on data.
+    """Estimate the power spectrum density (PSD) for input signal.
 
     Args:
-        signal (np.array): data in 1μPa.
-        window_size (int): fft window size.
-        overlap (float): overlap fft window, between 0 and 1.
-        fs (float): Sampling frequency.
+        signal (np.array): data in some unity (μPa).
+        fs (float): Sampling frequency, default frequency factor to fs.
+        window_size (int): number of samples in each segment.
+        overlap (float): overlap between segments, between 0 and 1.
 
     Returns:
         np.array: Frequencies in Hz.
-        np.array: Estimate spectrum in dB ref 1μPa @1m/Hz.
+        np.array: Estimate PSD in dB ref 1μPa @1m/√Hz. (eq. dB ref 1μPa^2 @1m/Hz).
     """
+    # https://ieeexplore.ieee.org/document/1161901
+    # http://resource.npl.co.uk/acoustics/techguides/concepts/siunits.html
 
     if overlap == 1:
-        raise UnboundLocalError("Overlap cannot be 1")
+        raise UnboundLocalError("Overlap expected as a float between 0 and 1")
 
-    window_size = int(window_size)
-    n_samples = signal.size
-    novelty_samples = int(window_size * (1-overlap))
+    freqs, intensity = scipy.welch(x=signal,
+                                fs=fs,
+                                window='hann',
+                                nperseg=window_size,
+                                noverlap=window_size * overlap,
+                                scaling='density',
+                                axis=-1,
+                                average='mean')
 
-    fft_result = np.zeros(window_size//2)
-    fft_freq = np.fft.fftfreq(window_size, 1/fs)[:window_size//2]
+    intensity = 20 * np.log10(intensity)
 
-    i = 0
-    n_means = 0
-    while i + novelty_samples + window_size <= n_samples:
-        fft_result = fft_result + np.abs(np.fft.fft(
-                    signal[i:i+window_size], norm='ortho')
-                [:window_size//2])
-        i += novelty_samples
-        n_means += 1
-
-    fft_result = fft_result/n_means
-    fft_result = 20 * np.log10(fft_result)
-
-    return fft_freq, fft_result
+    return freqs, intensity
 
 
 def normalize(x, type=0):
