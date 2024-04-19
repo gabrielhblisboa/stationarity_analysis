@@ -109,7 +109,7 @@ def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0
                                 fs=fs,
                                 window='hann',
                                 nperseg=window_size,
-                                noverlap=window_size * overlap,
+                                noverlap=int(window_size * overlap),
                                 scaling='density',
                                 axis=-1,
                                 average='mean')

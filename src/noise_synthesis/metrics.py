@@ -72,8 +72,9 @@ class Metrics():
 
     class Type(enum.Enum):
         KL_DIVERGENCE = 0,
-        WASSERTEIN = 1,
-        JENSEN_SHANNON = 2
+        SYMMETRIC_KL_DIVERGENCE = 1
+        WASSERTEIN = 2
+        JENSEN_SHANNON = 3
 
         def __str__(self) -> str:
             return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
@@ -84,6 +85,10 @@ class Metrics():
                 pdf1 = np.where(pdf1 == 0, 1e-10, pdf1)
                 pdf2 = np.where(pdf2 == 0, 1e-10, pdf2)
                 return np.sum(scipy.special.kl_div(pdf1, pdf2))
+
+            if self == Metrics.Type.SYMMETRIC_KL_DIVERGENCE:
+                return np.max([Metrics.Type.KL_DIVERGENCE.apply(pdf1, pdf2),
+                               Metrics.Type.KL_DIVERGENCE.apply(pdf2, pdf1)])
         
             if self == Metrics.Type.WASSERTEIN:
                 return scipy.stats.wasserstein_distance(pdf1, pdf2)
@@ -98,6 +103,9 @@ class Metrics():
         self.estimator = estimator
         self.n_points = n_points
 
+    def __str__(self) -> str:
+        return f'{self.estimator} {self.type}'
+
     def calc_block(self, window1: np.array, window2: np.array) -> float:
         pdf1, pdf2, _ = self.estimator.apply(window1, window2, self.n_points)
         return self.type.apply(pdf1, pdf2)
@@ -108,7 +116,7 @@ class Metrics():
         metrics = []
         eq_sample = []
 
-        for start_sample in range(0, len(data) - window_size, step):
+        for start_sample in range(0, len(data) - window_size - step, step):
 
             window1 = data[start_sample:start_sample + window_size]
             window2 = data[start_sample + step:start_sample + step + window_size]

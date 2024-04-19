@@ -13,16 +13,15 @@ def main():
     """Main function for the test program."""
 
     # Set up the directory for saving results
-    base_dir = "./result"
-    if not os.path.exists(base_dir):
-        os.mkdir(base_dir)
+    base_dir = "./result/signals"
+    os.makedirs(base_dir, exist_ok = True)
 
     # Set parameters for synthetic noise generation
     fs = 48000
     n_samples = 100 * fs
     baseline_psd_db = 10
 
-    for signal in syn_signals.Signals:
+    for signal in syn_signals.SyntheticSignals:
         output_spectrum = f"{base_dir}/{signal}.png"
 
         signal.plot(filename=output_spectrum,
@@ -31,10 +30,10 @@ def main():
                     baseline_psd_db=baseline_psd_db)
 
 
-    output_spectrum = f"{base_dir}/band_noise.png"
+    output_spectrum = f"{base_dir}/band noises.png"
     plt.figure(figsize=(12, 6))
 
-    for signal in [syn_signals.Signals.LOW, syn_signals.Signals.MEDIUM_LOW, syn_signals.Signals.MEDIUM_HIGH, syn_signals.Signals.HIGH]:
+    for signal in [syn_signals.SyntheticSignals.LOW, syn_signals.SyntheticSignals.MEDIUM_LOW, syn_signals.SyntheticSignals.MEDIUM_HIGH, syn_signals.SyntheticSignals.HIGH]:
 
         noise = signal.generate(n_samples=n_samples,
                                 fs=fs,
