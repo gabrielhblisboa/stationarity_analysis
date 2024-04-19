@@ -7,7 +7,7 @@ import scipy
 import scipy.special
 import scipy.signal as sgn
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 
 class DataEstimator(enum.Enum):
     PDF = 0,
@@ -32,8 +32,8 @@ class DataEstimator(enum.Enum):
             return DataEstimator._estimate_pdf(window1, window2, n_bins=n_points)
 
         if self == DataEstimator.FFT:
-            frequencies, power1 = syn_bg.psd(signal=window1, fs=1, window_size=n_points*2)
-            _, power2 = syn_bg.psd(signal=window2, fs=1, window_size=n_points*2)
+            frequencies, power1 = syn_noise.psd(signal=window1, fs=1, window_size=n_points*2)
+            _, power2 = syn_noise.psd(signal=window2, fs=1, window_size=n_points*2)
 
             return power1/np.sum(power1), power2/np.sum(power2), frequencies
 

@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io.wavfile as scipy_wav
 import matplotlib.pyplot as plt
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 from kl_test import calculate_kl
 import noise_mod
 
@@ -34,14 +34,14 @@ def main():
     ref_frequency = 20  # Reference frequency (20 Hz)
     intensities = -3 * np.log2(frequencies / ref_frequency)
 
-    pink_noise = syn_bg.generate_noise(frequencies, intensities, n_samples, fs)
+    pink_noise = syn_noise.generate_noise(frequencies, intensities, n_samples, fs)
 
     calculate_kl(pink_noise, n_samples, 'Pink', 'std', sub_dir, pdf_type=pdf_type, est_type=est_type)
 
     out_wav = f"{base_dir}/pink_noise_std_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(pink_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(pink_noise, 1))
 
     # plt.figure(figsize=(12, 5))
     # plt.plot(pink_noise, color='hotpink')
@@ -50,10 +50,10 @@ def main():
 
     # Pink Noise with multiple passages in filter -------------------------------------------------------------------
 
-    block1 = syn_bg.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
-    block2 = syn_bg.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
-    block3 = syn_bg.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
-    block4 = syn_bg.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
+    block1 = syn_noise.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
+    block2 = syn_noise.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
+    block3 = syn_noise.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
+    block4 = syn_noise.generate_noise(frequencies, intensities, int(n_samples / 4), fs)
 
     aux1 = np.append(block1, block2)
     aux2 = np.append(aux1, block3)
@@ -64,7 +64,7 @@ def main():
     out_wav = f"{base_dir}/pink_noise_mult_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mult_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mult_noise, 1))
 
     # fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(12,5))
     #
@@ -88,7 +88,7 @@ def main():
     out_wav = f"{base_dir}/pink_noise_amp-var_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # Pink Noise with amplitude variation (linear transition) -------------------------------------------------------
     mod_noise = noise_mod.transition(pink_noise, n_samples, 'linear')
@@ -97,7 +97,7 @@ def main():
     out_wav = f"{base_dir}/pink_noise_linear-trans_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # # Pink noise with amplitude variation (sin transition) ---------------------------------------------------------
     mod_noise = noise_mod.transition(pink_noise, n_samples, 'sin')
@@ -105,7 +105,7 @@ def main():
 
     out_wav = f"{base_dir}/pink_noise_sin-trans_audio.wav"
 
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # Pink Noise with inverted samples in second block -----------------------------------------------------
     pink_noise[int(n_samples * 0.4):int(n_samples * 0.6)] = (
@@ -115,7 +115,7 @@ def main():
 
     out_wav = f"{base_dir}/pink_noise_inv_audio.wav"
 
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(pink_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(pink_noise, 1))
 
 
 if __name__ == '__main__':

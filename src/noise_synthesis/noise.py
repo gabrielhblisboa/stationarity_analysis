@@ -74,6 +74,9 @@ def generate_noise(frequencies: np.array, psd_db: np.array, n_samples: int, fs: 
     # normalizando ganho para cada psd
     intensities_norm = psd_linear/np.max(psd_linear)
 
+    if np.min(intensities_norm) == 1:
+        return noise[order:]
+
     coeficient = scipy.firwin2(order, frequencies, np.sqrt(intensities_norm), antisymmetric=False)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.firwin2.html
     # antisymmetric=False, order=odd
@@ -81,7 +84,6 @@ def generate_noise(frequencies: np.array, psd_db: np.array, n_samples: int, fs: 
 
     out_noise = scipy.lfilter(coeficient, 1, noise)
     return out_noise[order:]
-
 
 def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0.5) \
         -> [np.array, np.array]:
@@ -114,8 +116,8 @@ def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0
 
     intensity = 20 * np.log10(intensity)
 
-    return freqs, intensity
-
+    # removendo DC
+    return freqs[1:], intensity[1:]
 
 def normalize(x, type=0):
     if type == 0: # normalize between 0 and 1
@@ -125,5 +127,3 @@ def normalize(x, type=0):
     if type == 2:
         return x/np.linalg.norm(x, axis=0)
     raise UnboundLocalError("normalization {:d} not implemented".format(type))
-
-

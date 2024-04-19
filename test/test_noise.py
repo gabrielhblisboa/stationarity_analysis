@@ -5,7 +5,7 @@ import numpy as np
 import scipy.io.wavfile as scipy_wav
 import matplotlib.pyplot as plt
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 
 
 def main():
@@ -38,10 +38,10 @@ def main():
 
     # Generate synthetic noise based on the desired spectrum
     frequencies = np.linspace(0, fs / 2, len(desired_spectrum))
-    noise = syn_bg.generate_noise(frequencies, desired_spectrum, n_samples, fs)
+    noise = syn_noise.generate_noise(frequencies, desired_spectrum, n_samples, fs)
 
     # Estimate the spectrum of the generated noise
-    fft_freq, fft_result = syn_bg.psd(signal=noise, fs=fs, window_size=4096, overlap=0.5)
+    fft_freq, fft_result = syn_noise.psd(signal=noise, fs=fs, window_size=4096, overlap=0.5)
 
     # Plot and save the spectra for comparison
     plt.figure(figsize=(12, 6))

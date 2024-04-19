@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 
 
 def main():
@@ -23,10 +23,10 @@ def main():
     intensities_brown = -6 * np.log2(frequencies / ref_frequency)
 
     # Now you can call your generate_noise function
-    pink_noise = syn_bg.generate_noise(frequencies, intensities_pink, n_samples, fs)
-    brown_noise = syn_bg.generate_noise(frequencies, intensities_brown, n_samples, fs)
+    pink_noise = syn_noise.generate_noise(frequencies, intensities_pink, n_samples, fs)
+    brown_noise = syn_noise.generate_noise(frequencies, intensities_brown, n_samples, fs)
 
-    fft_freq, fft_result = syn_bg.psd(pink_noise, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq, fft_result = syn_noise.psd(pink_noise, int(n_samples / 100), overlap=0.5, fs=fs)
 
     plt.style.use('dark_background')
     fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(10, 8))
@@ -42,7 +42,7 @@ def main():
 
     ax[2].semilogx(fft_freq, fft_result, label='Pink Noise', color='hotpink')
 
-    fft_freq, fft_result = syn_bg.psd(brown_noise, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq, fft_result = syn_noise.psd(brown_noise, int(n_samples / 100), overlap=0.5, fs=fs)
     ax[2].semilogx(fft_result, label='Brown Noise', color='brown')
 
     ax[2].set_xlabel('Frequency (Hz)')

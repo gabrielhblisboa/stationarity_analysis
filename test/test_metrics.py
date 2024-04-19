@@ -2,7 +2,7 @@ import os
 import math
 import numpy as np
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
 
 
@@ -35,7 +35,7 @@ def main():
 
     # Generate synthetic noise based on the desired spectrum
     frequencies = np.linspace(0, fs / 2, len(desired_spectrum))
-    noise1 = syn_bg.generate_noise(frequencies, desired_spectrum, n_samples, fs)
+    noise1 = syn_noise.generate_noise(frequencies, desired_spectrum, n_samples, fs)
 
 
     #white noise mean psd

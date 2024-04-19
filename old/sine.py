@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io.wavfile as scipy_wav
 import matplotlib.pyplot as plt
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 from kl_test import calculate_kl
 import noise_mod
 
@@ -45,7 +45,7 @@ def main():
     out_wav = f"{base_dir}/sine_amp-var_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(sin, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(sin, 1))
 
     # Sine Wave with amplitude variation (linear) -------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ def main():
     out_wav = f"{base_dir}/sine_linear-trans_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(sin, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(sin, 1))
 
     # Sine Wave with amplitude variation (sin) -------------------------------------------------------------------
 
@@ -83,7 +83,7 @@ def main():
     out_wav = f"{base_dir}/sine_sin-trans_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(sin, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(sin, 1))
 
     # Sine Wave with frequency variation ---------------------------------------------------------------------------
     frequency_middle = 50  # Frequency for the middle section in Hz
@@ -126,7 +126,7 @@ def main():
     out_wav = f"{base_dir}/sine_var_freq_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(var_sin, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(var_sin, 1))
 
 
 if __name__ == '__main__':

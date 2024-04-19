@@ -3,7 +3,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 import scipy.io.wavfile as scipy_wav
 from kl_test import calculate_kl
 import noise_mod
@@ -30,7 +30,7 @@ def test_noise(band_noise, n_samples, fs, noise_type):
     out_wav = f"{base_dir}/{sub_dir}_std_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(band_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(band_noise, 1))
 
     # plt.figure(figsize=(12, 5))
     # plt.plot(band_noise, color='band')
@@ -53,7 +53,7 @@ def test_noise(band_noise, n_samples, fs, noise_type):
     out_wav = f"{base_dir}/{sub_dir}_amp-var_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # Band Noise with amplitude variation (linear transition) -------------------------------------------------------
     mod_noise = noise_mod.transition(band_noise, n_samples, 'linear')
@@ -62,7 +62,7 @@ def test_noise(band_noise, n_samples, fs, noise_type):
     out_wav = f"{base_dir}/{sub_dir}_linear-trans_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # # Band noise with amplitude variation (sin transition) ---------------------------------------------------------
     mod_noise = noise_mod.transition(band_noise, n_samples, 'sin')
@@ -70,7 +70,7 @@ def test_noise(band_noise, n_samples, fs, noise_type):
 
     out_wav = f"{base_dir}/{sub_dir}_sin-trans_audio.wav"
 
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # Band Noise with inverted samples in second block -----------------------------------------------------
     band_noise[int(n_samples * 0.4):int(n_samples * 0.6)] = (
@@ -80,7 +80,7 @@ def test_noise(band_noise, n_samples, fs, noise_type):
 
     out_wav = f"{base_dir}/{sub_dir}_inv_audio.wav"
 
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(band_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(band_noise, 1))
 
 
 def test_generate_noise():
@@ -129,24 +129,24 @@ def test_generate_noise():
     # intensities_high[(frequencies >= 15005) & (frequencies <= 20000)] = 0  # 0 dB
 
     # Gerando ruído
-    noise_low = syn_bg.generate_noise(frequencies, intensities_low, n_samples, fs)
+    noise_low = syn_noise.generate_noise(frequencies, intensities_low, n_samples, fs)
 
     # Aplicando FFT ao ruído gerado
-    fft_freq_low, fft_result_low = syn_bg.psd(noise_low, int(n_samples / 100), overlap=0.5, fs=fs)
+    fft_freq_low, fft_result_low = syn_noise.psd(noise_low, int(n_samples / 100), overlap=0.5, fs=fs)
 
     # Low-Mid Freq
-    noise_low_mid = syn_bg.generate_noise(frequencies, intensities_low_mid, n_samples, fs)
+    noise_low_mid = syn_noise.generate_noise(frequencies, intensities_low_mid, n_samples, fs)
     fft_freq_low_mid, fft_result_low_mid = (
-        syn_bg.psd(noise_low_mid, int(n_samples / 100), overlap=0.5, fs=fs))
+        syn_noise.psd(noise_low_mid, int(n_samples / 100), overlap=0.5, fs=fs))
 
     # Mid-High Freq
-    noise_mid_high = syn_bg.generate_noise(frequencies, intensities_mid_high, n_samples, fs)
+    noise_mid_high = syn_noise.generate_noise(frequencies, intensities_mid_high, n_samples, fs)
     fft_freq_mid_high, fft_result_mid_high = (
-        syn_bg.psd(noise_mid_high, int(n_samples / 100), overlap=0.5, fs=fs))
+        syn_noise.psd(noise_mid_high, int(n_samples / 100), overlap=0.5, fs=fs))
 
     # High
-    noise_high = syn_bg.generate_noise(frequencies, intensities_high, n_samples, fs)
-    fft_freq_high, fft_result_high = syn_bg.psd(noise_high, int(n_samples / 100), overlap=0.5, fs=fs)
+    noise_high = syn_noise.generate_noise(frequencies, intensities_high, n_samples, fs)
+    fft_freq_high, fft_result_high = syn_noise.psd(noise_high, int(n_samples / 100), overlap=0.5, fs=fs)
 
     print(noise_low)
     plt.plot(noise_low)
@@ -221,16 +221,16 @@ def main():
     # intensities_high[(frequencies >= 15005) & (frequencies <= 20000)] = 0  # 0 dB
 
     # Gerando ruído
-    noise_low = syn_bg.generate_noise(frequencies, intensities_low, n_samples, fs)
+    noise_low = syn_noise.generate_noise(frequencies, intensities_low, n_samples, fs)
 
     # Low-Mid Freq
-    noise_low_mid = syn_bg.generate_noise(frequencies, intensities_low_mid, n_samples, fs)
+    noise_low_mid = syn_noise.generate_noise(frequencies, intensities_low_mid, n_samples, fs)
 
     # Mid-High Freq
-    noise_mid_high = syn_bg.generate_noise(frequencies, intensities_mid_high, n_samples, fs)
+    noise_mid_high = syn_noise.generate_noise(frequencies, intensities_mid_high, n_samples, fs)
 
     # High
-    noise_high = syn_bg.generate_noise(frequencies, intensities_high, n_samples, fs)
+    noise_high = syn_noise.generate_noise(frequencies, intensities_high, n_samples, fs)
 
     test_noise(noise_low, n_samples, fs, 'low-freq')
     test_noise(noise_low_mid, n_samples, fs, 'low-mid-freq')

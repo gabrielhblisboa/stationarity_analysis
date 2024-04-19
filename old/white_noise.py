@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io.wavfile as scipy_wav
 import matplotlib.pyplot as plt
 
-import noise_synthesis.background_noise as syn_bg
+import noise_synthesis.noise as syn_noise
 from kl_test import calculate_kl
 import noise_mod
 
@@ -40,7 +40,7 @@ def main():
     out_wav = f"{base_dir}/white_noise_amp-var_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # White Noise with amplitude variation (linear transition) -------------------------------------------------------
     mod_noise = noise_mod.transition(white_noise, n_samples, 'linear')
@@ -49,7 +49,7 @@ def main():
     out_wav = f"{base_dir}/white_noise_linear-trans_audio.wav"
 
     # Save the generated noise as a WAV file
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # # White noise with amplitude variation (sin transition) ---------------------------------------------------------
     mod_noise = noise_mod.transition(white_noise, n_samples, 'sin')
@@ -57,7 +57,7 @@ def main():
 
     out_wav = f"{base_dir}/white_noise_sin-trans_audio.wav"
 
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(mod_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(mod_noise, 1))
 
     # White Noise with inverted samples in second block -----------------------------------------------------
     white_noise[int(n_samples * 0.4):int(n_samples * 0.6)] = (
@@ -67,7 +67,7 @@ def main():
 
     out_wav = f"{base_dir}/white_noise_inv_audio.wav"
 
-    scipy_wav.write(out_wav, fs, syn_bg.normalize(white_noise, 1))
+    scipy_wav.write(out_wav, fs, syn_noise.normalize(white_noise, 1))
 
 
 if __name__ == '__main__':
