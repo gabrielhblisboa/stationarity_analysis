@@ -17,8 +17,8 @@ def main():
         os.mkdir(base_dir)
 
     # Set parameters for synthetic noise generation
-    output_file = f"{base_dir}/generate_output.wav"
-    fs = 31250
+    output_spectrum = f"{base_dir}/generate_output.png"
+    fs = 48000
     n_samples = 100 * fs
     n_fft = 2048
     f_test_min = 1000
@@ -48,9 +48,7 @@ def main():
     plt.plot(fft_freq, fft_result, label='Test Spectrum')
     plt.plot(frequencies, desired_spectrum, linestyle='--', label='Desired Spectrum')
     plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Amplitude (dB)')
-    plt.legend()
-    plt.savefig(f"{base_dir}/generate_spectrum.png")
+    plt.savefig(output_spectrum)
     plt.close()
 
     # Print analysis results
@@ -60,7 +58,7 @@ def main():
     print(f"\tMean error: {np.mean(desired_spectrum) - np.mean(fft_result):.2f} dB ref 1μPa @1m/Hz")
     print(f"Data and spectrum exported in {base_dir}")
 
-    scipy_wav.write(output_file, fs, noise)
+    # scipy_wav.write(output_file, fs, noise)
 
 if __name__ == "__main__":
     main()
