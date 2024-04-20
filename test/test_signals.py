@@ -21,7 +21,8 @@ def main():
     n_samples = 100 * fs
     baseline_psd_db = 10
 
-    for signal in syn_signals.SyntheticSignals:
+    for type in syn_signals.SyntheticSignal.Type:
+        signal = syn_signals.SyntheticSignal(type=type)
         output_spectrum = f"{base_dir}/{signal}.png"
 
         signal.plot(filename=output_spectrum,
@@ -33,7 +34,11 @@ def main():
     output_spectrum = f"{base_dir}/band noises.png"
     plt.figure(figsize=(12, 6))
 
-    for signal in [syn_signals.SyntheticSignals.LOW, syn_signals.SyntheticSignals.MEDIUM_LOW, syn_signals.SyntheticSignals.MEDIUM_HIGH, syn_signals.SyntheticSignals.HIGH]:
+    for type in [syn_signals.SyntheticSignal.Type.LOW,
+                    syn_signals.SyntheticSignal.Type.MEDIUM_LOW,
+                    syn_signals.SyntheticSignal.Type.MEDIUM_HIGH,
+                    syn_signals.SyntheticSignal.Type.HIGH]:
+        signal = syn_signals.SyntheticSignal(type=type)
 
         noise = signal.generate(n_samples=n_samples,
                                 fs=fs,

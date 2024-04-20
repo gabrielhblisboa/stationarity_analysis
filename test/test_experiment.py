@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 
 import noise_synthesis.metrics as syn_metrics
 import noise_synthesis.signals as syn_signals
+import noise_synthesis.experiment as syn_exp
 
 
 def main():
     """Main function for the test program."""
-
 
     # Set parameters for synthetic noise generation
     fs = 48000
@@ -27,18 +27,24 @@ def main():
         for estimator in syn_metrics.DataEstimator:
             metric_list.append(syn_metrics.Metrics(type=type, estimator=estimator))
 
-        for transitions in syn_signals.AmplitudeTransitionType:
-            for signal in syn_signals.SyntheticSignals:
+        for transitions in syn_exp.AmplitudeTransitionType:
+            for type in syn_signals.SyntheticSignal.Type:
+                signal = syn_signals.SyntheticSignal(type=type)
 
                 file_basename = f"{base_dir}/{transitions} {signal}"
 
-                exp = syn_signals.Experiment(signal=signal,
-                                            transition=transitions,
-                                            metric_list=metric_list,
-                                            start_psd_db=start_psd_db,
-                                            end_psd_db=end_psd_db)
+                exp = syn_exp.Experiment(signal1=signal,
+                                         psd_signal1=start_psd_db,
+                                         signal2=signal,
+                                         psd_signal2=end_psd_db,
+                                         transition=transitions,
+                                         metric_list=metric_list)
 
-                exp.run(file_basename=file_basename, complete_size=n_samples, fs =fs, window_size=4096, overlap=0)
+                exp.run(file_basename=file_basename,
+                        complete_size=n_samples,
+                        fs=fs,
+                        window_size=4096,
+                        overlap=0)
 
 
 if __name__ == "__main__":
