@@ -2,7 +2,7 @@
 import os
 import math
 import numpy as np
-import scipy.io.wavfile as scipy_wav
+import scipy.io.wavfile as wav_file
 import matplotlib.pyplot as plt
 
 import noise_synthesis.noise as syn_noise
@@ -57,7 +57,7 @@ def main():
     print(f"\tMean error: {np.mean(desired_spectrum) - np.mean(fft_result):.2f} dB ref 1μPa @1m/Hz")
     print(f"Data and spectrum exported in {base_dir}")
 
-    # scipy_wav.write(output_file, fs, noise)
+    # wav_file.write(output_file, fs, noise)
 
 if __name__ == "__main__":
     main()

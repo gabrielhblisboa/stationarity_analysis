@@ -3,6 +3,7 @@ import typing
 
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.io.wavfile as wav_file
 
 import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
@@ -91,3 +92,5 @@ class Experiment():
 
             plt.savefig(f'{file_basename}_{metric}.png')
             plt.close()
+
+        wav_file.write(f'{file_basename}.wav', fs, syn_noise.normalize(signal, type=1))

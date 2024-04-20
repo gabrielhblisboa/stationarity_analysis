@@ -1,9 +1,11 @@
 import abc
 import enum
 import typing
+import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.io.wavfile as wav_file
 
 import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
@@ -102,3 +104,47 @@ class SyntheticSignal(Signal):
                                             fs=fs)
 
         raise NotImplementedError(f'method gen not implemented for {self}')
+
+class RealSignal(Signal):
+    class Type(enum.Enum):
+        FLOW = 0            #85     x1 gain
+        RAIN = 1            #86     x32 gain
+        WAVE = 2            #87     x64 gain
+        WIND = 3            #88     x1 gain
+        FISH_BOAT = 4       #47     x16 gain
+        MUSSEL_BOAT = 5     #75     x64 gain
+                                    #sensitivity = -193.5 dB
+
+        def __str__(self) -> str:
+            return str(self.name).rsplit(".", maxsplit=1)[-1].lower()
+
+    def __init__(self, type: Type) -> None:
+        super().__init__()
+        self.type = type
+
+    def __str__(self) -> str:
+        return str(self.type)
+
+    def generate(self, n_samples, fs, baseline_psd_db) -> np.array:
+
+        filename = os.path.join(os.path.dirname(__file__), "data", f'{str(self.type)}.wav')
+
+        if not os.path.exists(filename):
+            raise UnboundLocalError(f'File to {self} not found: {filename}')
+
+        file_fs, input = wav_file.read(filename)
+
+        if file_fs != fs:
+            raise UnboundLocalError(f'Desired fs {fs} not equals to file fs {file_fs}')
+
+        #normalizando int32 para +-1
+        input = input / 2**(32-1)-1
+        input = input - np.mean(input)
+
+        #normalizando o valor rms
+        input = input / np.sqrt(np.mean(np.square(input)))
+
+        #aplicando o ganho desejado
+        input = input * 10**(baseline_psd_db/20)
+
+        return input[:n_samples]

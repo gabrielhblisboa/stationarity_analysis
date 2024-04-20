@@ -7,4 +7,5 @@ setup(
     description='Noise Synthesis Library using the Kullback-Leibler Divergence',
     long_description=open('README.md').read(),
     author='Gabriel Lisboa, Fabio Oliveira',
+    package_data={'noise_synthesis': ['data/*.wav']},
 )
