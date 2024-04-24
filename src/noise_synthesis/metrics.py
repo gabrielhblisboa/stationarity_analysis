@@ -7,6 +7,8 @@ import scipy
 import scipy.special
 import scipy.signal as sgn
 
+import statsmodels.tsa.stattools as stats
+
 import noise_synthesis.noise as syn_noise
 
 class DataEstimator(enum.Enum):
@@ -125,3 +127,28 @@ class Metrics():
             eq_sample.append(start_sample + step)
 
         return metrics, eq_sample
+
+class ADF(Metrics):
+
+    def __init__(self) -> None:
+        super().__init__(type, None, None)
+
+    def calc_block(self, window1: np.array, window2: np.array) -> float:
+        # 1%: -3.432
+        # 5%: -2.862
+        # 10%: -2.567
+        result = stats.adfuller(np.concatenate((window1, window2)))
+        # print('\tADF Statistic: %f' % result[0])
+        # print('\tp-value: %f' % result[1])
+        # print('\tCritical Values:')
+        # for key, value in result[4].items():
+        #     print('\t\t%s: %.3f' % (key, value))
+        return result[0]
+    
+
+    def calc_pvalue(self, window1: np.array, window2: np.array) -> float:
+        result = stats.adfuller(np.concatenate((window1, window2)))
+        return result[1]
+
+    def __str__(self) -> str:
+        return f'ADF'

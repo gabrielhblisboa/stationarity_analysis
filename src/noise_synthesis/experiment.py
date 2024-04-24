@@ -4,6 +4,7 @@ import typing
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io.wavfile as wav_file
+import tikzplotlib as tikz
 
 import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
@@ -18,7 +19,7 @@ class AmplitudeTransitionType(enum.Enum):
     def __str__(self) -> str:
         return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
 
-    def apply(self, signal1: np.array, signal2: np.array, transition_samples: typing.Union[int, float] = None) -> np.array:
+    def apply(self, signal1: np.array, signal2: np.array, transition_samples: typing.Union[int, float] = None) -> typing.Tuple[np.array, typing.List[int]]:
 
         output = np.copy(signal1)
         n_samples = len(output)
@@ -32,9 +33,16 @@ class AmplitudeTransitionType(enum.Enum):
         transition_start = int(n_samples * 0.33)
         transition_end = int(n_samples * 0.67)
 
-        if self != AmplitudeTransitionType.ABRUPT:
+        if self == AmplitudeTransitionType.ABRUPT:
+            limits = [transition_start, transition_end]
+        else:
             transition_start -= transition_samples//2
             transition_end += transition_samples//2
+
+            limits = [transition_start,
+                      transition_start + transition_samples,
+                      transition_end - transition_samples,
+                      transition_end]
 
             for n in range(1, transition_samples):
 
@@ -51,7 +59,7 @@ class AmplitudeTransitionType(enum.Enum):
 
         output[transition_start:transition_end] = signal2[transition_start:transition_end]
 
-        return output
+        return output, limits
 
 
 class Experiment():
@@ -70,27 +78,41 @@ class Experiment():
         self.transition = transition
         self.metric_list = metric_list
 
-    def run(self, file_basename: str, complete_size: int, fs: float, window_size: int, overlap: float) -> None:
-
+    def _generate(self, file_basename: str, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[int]]:
         signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
         signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
+        return self.transition.apply(signal1=signal1, signal2=signal2)
 
-        signal = self.transition.apply(signal1=signal1, signal2=signal2)
+    def run(self, file_basename: str, complete_size: int, fs: float, window_size: int, overlap: float, n_runs = 100) -> None:
 
         for metric in self.metric_list:
-            values, ref_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
+            results = []
 
-            fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
+            fig, ax = plt.subplots(figsize=(12, 8))
 
-            ax[0].plot(np.linspace(0,len(signal)/fs, len(signal)), signal)
-            ax[0].set_xlabel('Time (s)')
-            ax[0].set_ylabel('Intensity')
+            for _ in range(n_runs):
+                signal, limits = self._generate(file_basename=file_basename, complete_size=complete_size, fs=fs)
+                values, ref_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
+                results.append(values)
 
-            ax[1].plot(np.array(ref_sample)/fs, values)
-            ax[1].set_xlabel('Time (s)')
-            ax[1].set_ylabel('Metric')
+            ax.boxplot(np.array(results))
+
+            indices = np.linspace(0, len(ref_sample) - 1, 5, dtype=int)
+            ax.set_xticks([i for i in indices])
+            ax.set_xticklabels([f'{ref_sample[i]/fs:.2f}s' for i in indices])
+            ax.set_xlabel('Time (s)')
+            ax.set_ylabel('Intensity')
+
+            for limit in limits:
+                # index = np.where(np.array(ref_sample) > limit)[0][0]
+                index = np.abs(np.array(ref_sample) - limit).argmin() + 1
+                ax.axvline(x=index, color='red', linewidth=1.5) #linestyle='--',
 
             plt.savefig(f'{file_basename}_{metric}.png')
+            tikz.save(f'{file_basename}_{metric}.tex')
             plt.close()
 
+
+    def save_sample(self, file_basename: str, complete_size: int, fs: float) -> None:
+        signal, _ = self._generate(file_basename=file_basename, complete_size=complete_size, fs=fs)
         wav_file.write(f'{file_basename}.wav', fs, syn_noise.normalize(signal, type=1))

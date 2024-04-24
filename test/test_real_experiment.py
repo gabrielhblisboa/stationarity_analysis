@@ -15,16 +15,17 @@ def main():
 
     # Set parameters for synthetic noise generation
     fs = 52734
-    n_samples = 3 * fs
+    n_samples = 9 * fs
     baseline_psd_db = 0
 
-    base_dir = f"./result/experiment/real/"
+    base_dir = f"./result/test_exp/real/"
     os.makedirs(base_dir, exist_ok = True)
 
     metric_list = []
     for estimator in [syn_metrics.DataEstimator.PDF]:
         metric_list.append(syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN,
                                                estimator=estimator))
+    metric_list.append(syn_metrics.ADF())
 
     signal_type_list = [[syn_signals.RealSignal.Type.FLOW, syn_signals.RealSignal.Type.RAIN],
                    [syn_signals.RealSignal.Type.FLOW, syn_signals.RealSignal.Type.WAVE],

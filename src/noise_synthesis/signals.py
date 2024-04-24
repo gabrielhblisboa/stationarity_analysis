@@ -107,10 +107,10 @@ class SyntheticSignal(Signal):
 
 class RealSignal(Signal):
     class Type(enum.Enum):
-        FLOW = 0            #85     x1 gain
-        RAIN = 1            #86     x32 gain
-        WAVE = 2            #87     x64 gain
-        WIND = 3            #88     x1 gain
+        FLOW = 0            #81     x1 gain
+        RAIN = 1            #82     x32 gain
+        WAVE = 2            #83     x64 gain
+        WIND = 3            #84     x1 gain
         FISH_BOAT = 4       #47     x16 gain
         MUSSEL_BOAT = 5     #75     x64 gain
                                     #sensitivity = -193.5 dB
