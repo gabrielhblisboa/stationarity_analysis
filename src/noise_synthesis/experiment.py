@@ -1,5 +1,6 @@
 import enum
 import typing
+import tqdm
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,8 +41,8 @@ class AmplitudeTransitionType(enum.Enum):
             transition_end += transition_samples//2
 
             limits = [transition_start,
-                      transition_start + transition_samples,
                       transition_end - transition_samples,
+                      transition_start + transition_samples,
                       transition_end]
 
             for n in range(1, transition_samples):
@@ -65,12 +66,14 @@ class AmplitudeTransitionType(enum.Enum):
 class Experiment():
 
     def __init__(self,
+                 name: str,
                  signal1: syn_signals.SyntheticSignal,
                  psd_signal1: float,
                  signal2: syn_signals.SyntheticSignal,
                  psd_signal2: float,
                  transition: AmplitudeTransitionType,
                  metric_list: typing.List[syn_metrics.Metrics]) -> None:
+        self.name = name
         self.signal1 = signal1
         self.psd_signal1 = psd_signal1
         self.signal2 = signal2
@@ -78,7 +81,7 @@ class Experiment():
         self.transition = transition
         self.metric_list = metric_list
 
-    def _generate(self, file_basename: str, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[int]]:
+    def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[int]]:
         signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
         signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
         return self.transition.apply(signal1=signal1, signal2=signal2)
@@ -91,28 +94,76 @@ class Experiment():
             fig, ax = plt.subplots(figsize=(12, 8))
 
             for _ in range(n_runs):
-                signal, limits = self._generate(file_basename=file_basename, complete_size=complete_size, fs=fs)
-                values, ref_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
+                signal, limits = self.generate(complete_size=complete_size, fs=fs)
+                values, start_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
                 results.append(values)
 
             ax.boxplot(np.array(results))
 
-            indices = np.linspace(0, len(ref_sample) - 1, 5, dtype=int)
+            indices = np.linspace(0, len(start_sample) - 1, 5, dtype=int)
             ax.set_xticks([i for i in indices])
-            ax.set_xticklabels([f'{ref_sample[i]/fs:.2f}s' for i in indices])
+            ax.set_xticklabels([f'{start_sample[i]/fs:.2f}s' for i in indices])
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Intensity')
 
             for limit in limits:
-                # index = np.where(np.array(ref_sample) > limit)[0][0]
-                index = np.abs(np.array(ref_sample) - limit).argmin() + 1
+                index = np.where(np.array(start_sample) + window_size > limit)[0][0]
                 ax.axvline(x=index, color='red', linewidth=1.5) #linestyle='--',
+
+                index = np.where(np.array(start_sample) > limit)[0][0]
+                ax.axvline(x=index, color='blue', linewidth=1.5)
+                
 
             plt.savefig(f'{file_basename}_{metric}.png')
             tikz.save(f'{file_basename}_{metric}.tex')
             plt.close()
 
-
     def save_sample(self, file_basename: str, complete_size: int, fs: float) -> None:
-        signal, _ = self._generate(file_basename=file_basename, complete_size=complete_size, fs=fs)
+        signal, _ = self.generate(complete_size=complete_size, fs=fs)
         wav_file.write(f'{file_basename}.wav', fs, syn_noise.normalize(signal, type=1))
+
+class Comparator():
+    def __init__(self, experiment_list) -> None:
+        self.experiment_list = experiment_list
+
+    def run(self, file_basename: str, complete_size: int, fs: float, window_size: int, overlap: float, n_runs = 100, error_bar = False) -> None:
+
+        fig, ax = plt.subplots(figsize=(12, 8))
+
+        for exp in tqdm.tqdm(self.experiment_list, leave=False, desc="Experiment"):
+
+            for metric in exp.metric_list:
+
+                results = []
+                for _ in range(n_runs):
+                    signal, limits = exp.generate(complete_size=complete_size, fs=fs)
+                    values, start_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
+                    results.append(values)
+
+                    if len(exp.metric_list) == 1:
+                        label = f'{exp.name}'
+                    else:
+                        label = f'{exp.name}_metric[{metric}]'
+
+                y = np.mean(np.array(results), axis=0)
+                y_err = np.std(np.array(results), axis=0)
+                y_err = y_err/(np.max(y) - np.min(y))
+                y = (y-np.min(y))/(np.max(y) - np.min(y))
+                y = y-np.mean(y)
+                if error_bar:
+                    ax.errorbar(np.array(start_sample)/fs, y, yerr=y_err, label=label, fmt='-o', capsize=5)
+                else:
+                    ax.plot(np.array(start_sample)/fs, y, label=label)
+                ax.set_xlabel('Time (s)')
+                ax.set_ylabel('Intensity')
+
+        # for limit in limits:
+        #     ax.axvline(x=(limit - window_size)/fs, color='red', linewidth=1.5) #linestyle='--',
+        #     ax.axvline(x=(limit)/fs, color='blue', linewidth=1.5)
+
+        tikz.save(f'{file_basename}.tex')
+
+        ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
+        fig.tight_layout()
+        plt.savefig(f'{file_basename}.png')
+        plt.close()

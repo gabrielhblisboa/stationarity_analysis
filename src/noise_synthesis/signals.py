@@ -113,6 +113,8 @@ class RealSignal(Signal):
         WIND = 3            #84     x1 gain
         FISH_BOAT = 4       #47     x16 gain
         MUSSEL_BOAT = 5     #75     x64 gain
+        DREDGER = 6         #94     x16 gain
+        DREDGER2 = 7        #95     x16 gain
                                     #sensitivity = -193.5 dB
 
         def __str__(self) -> str:

@@ -114,17 +114,20 @@ class Metrics():
 
     def calc_data(self, data: np.array, window_size: int, overlap: float = 0) -> typing.Tuple[np.array, np.array]:
 
-        step = int((1-overlap) * window_size)
+        if isinstance(overlap, int):
+            step = window_size - overlap
+        else:
+            step = int((1-overlap) * window_size)
         metrics = []
         eq_sample = []
 
-        for start_sample in range(0, len(data) - window_size - step, step):
+        for start_sample in range(0, len(data) - window_size, step):
 
-            window1 = data[start_sample:start_sample + window_size]
-            window2 = data[start_sample + step:start_sample + step + window_size]
+            window1 = data[start_sample:start_sample + window_size//2]
+            window2 = data[start_sample + window_size//2:start_sample + window_size]
 
             metrics.append(self.calc_block(window1, window2))
-            eq_sample.append(start_sample + step)
+            eq_sample.append(start_sample)
 
         return metrics, eq_sample
 
