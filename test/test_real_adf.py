@@ -20,7 +20,7 @@ def main():
     base_dir = f"./result/test_exp/real/"
     os.makedirs(base_dir, exist_ok = True)
 
-    adf = syn_metrics.ADF()
+    adf = syn_metrics.StatisticTest(syn_metrics.StatisticTest.Type.ADF)
 
     for n_samples in [1/4, 1, 5]:
 
@@ -33,8 +33,6 @@ def main():
             data = signal.generate(n_samples=int(n_samples*fs),
                                 fs=fs,
                                 baseline_psd_db=baseline_psd_db)
-
-            print('\t', signal_type, ": ", adf.calc_pvalue(data[:len(data)//2], data[len(data)//2:]))
 
 if __name__ == "__main__":
     main()

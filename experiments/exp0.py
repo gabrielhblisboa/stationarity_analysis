@@ -14,14 +14,16 @@ def main(n_runs: int):
 
     # Set parameters for synthetic noise generation
     fs = 52734
-    n_samples = 6 * fs
+    n_samples = int(2 * fs)
     psd_db = -np.log10(fs/2)*20  # psd de um ruido branco de variancia 1
     end_psd_db = psd_db + 6
 
     base_dir = f"./result/{os.path.splitext(os.path.basename(__file__))[0]}"
     os.makedirs(base_dir, exist_ok = True)
 
-    metric_list = [syn_metrics.ADF()]
+    metric_list = []
+    for type in syn_metrics.StatisticTest.Type:
+        metric_list.append(syn_metrics.StatisticTest(type))
 
     for type in [syn_signals.SyntheticSignal.Type.WHITE]:
         signal = syn_signals.SyntheticSignal(type=type)
@@ -34,13 +36,13 @@ def main(n_runs: int):
                                  signal2=signal,
                                  psd_signal2=end_psd_db,
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
+                                 window_size=4*1024,
+                                 overlap=0.5,
                                  metric_list=metric_list)
 
         exp.run(file_basename=file_basename,
                 complete_size=n_samples,
                 fs=fs,
-                window_size=4*1024,
-                overlap=0.5,
                 n_runs=n_runs)
 
         exp.save_sample(file_basename=file_basename,

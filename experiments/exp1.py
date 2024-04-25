@@ -37,13 +37,13 @@ def main(n_runs: int):
                                  signal2=signal,
                                  psd_signal2=end_psd_db,
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
+                                 window_size=4*1024,
+                                 overlap=0.5,
                                  metric_list=metric_list)
 
         exp.run(file_basename=file_basename,
                 complete_size=n_samples,
                 fs=fs,
-                window_size=4*1024,
-                overlap=0.5,
                 n_runs=n_runs)
 
         exp.save_sample(file_basename=file_basename,

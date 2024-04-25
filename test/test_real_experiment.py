@@ -25,7 +25,7 @@ def main():
     for estimator in [syn_metrics.DataEstimator.PDF]:
         metric_list.append(syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN,
                                                estimator=estimator))
-    metric_list.append(syn_metrics.ADF())
+    metric_list.append(syn_metrics.StatisticTest(syn_metrics.StatisticTest.Type.ADF))
 
     signal_type_list = [[syn_signals.RealSignal.Type.FLOW, syn_signals.RealSignal.Type.RAIN],
                    [syn_signals.RealSignal.Type.FLOW, syn_signals.RealSignal.Type.WAVE],
@@ -40,18 +40,19 @@ def main():
 
             file_basename = f"{base_dir}/{transitions} {signal1} {signal2}"
 
-            exp = syn_exp.Experiment(signal1=signal1,
-                                        psd_signal1=baseline_psd_db,
-                                        signal2=signal2,
-                                        psd_signal2=baseline_psd_db,
-                                        transition=transitions,
-                                        metric_list=metric_list)
+            exp = syn_exp.Experiment(name='test_real',
+                                     signal1=signal1,
+                                     psd_signal1=baseline_psd_db,
+                                     signal2=signal2,
+                                     psd_signal2=baseline_psd_db,
+                                     transition=transitions,
+                                     window_size=4096,
+                                     overlap=0,
+                                     metric_list=metric_list)
 
             exp.run(file_basename=file_basename,
                     complete_size=n_samples,
-                    fs=fs,
-                    window_size=4096,
-                    overlap=0)
+                    fs=fs)
 
 
 if __name__ == "__main__":

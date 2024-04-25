@@ -72,6 +72,8 @@ class Experiment():
                  signal2: syn_signals.SyntheticSignal,
                  psd_signal2: float,
                  transition: AmplitudeTransitionType,
+                 window_size: int,
+                 overlap: float,
                  metric_list: typing.List[syn_metrics.Metrics]) -> None:
         self.name = name
         self.signal1 = signal1
@@ -79,14 +81,16 @@ class Experiment():
         self.signal2 = signal2
         self.psd_signal2 = psd_signal2
         self.transition = transition
+        self.window_size = window_size
         self.metric_list = metric_list
+        self.overlap = overlap
 
     def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[int]]:
         signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
         signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
         return self.transition.apply(signal1=signal1, signal2=signal2)
 
-    def run(self, file_basename: str, complete_size: int, fs: float, window_size: int, overlap: float, n_runs = 100) -> None:
+    def run(self, file_basename: str, complete_size: int, fs: float, n_runs = 100) -> None:
 
         for metric in self.metric_list:
             results = []
@@ -95,7 +99,7 @@ class Experiment():
 
             for _ in range(n_runs):
                 signal, limits = self.generate(complete_size=complete_size, fs=fs)
-                values, start_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
+                values, start_sample = metric.calc_data(data=signal, window_size=self.window_size, overlap=self.overlap)
                 results.append(values)
 
             ax.boxplot(np.array(results))
@@ -107,7 +111,7 @@ class Experiment():
             ax.set_ylabel('Intensity')
 
             for limit in limits:
-                index = np.where(np.array(start_sample) + window_size > limit)[0][0]
+                index = np.where(np.array(start_sample) + self.window_size > limit)[0][0]
                 ax.axvline(x=index, color='red', linewidth=1.5) #linestyle='--',
 
                 index = np.where(np.array(start_sample) > limit)[0][0]
@@ -126,7 +130,7 @@ class Comparator():
     def __init__(self, experiment_list) -> None:
         self.experiment_list = experiment_list
 
-    def run(self, file_basename: str, complete_size: int, fs: float, window_size: int, overlap: float, n_runs = 100, error_bar = False) -> None:
+    def run(self, file_basename: str, complete_size: int, fs: float, n_runs = 100, error_bar = False) -> None:
 
         fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -137,7 +141,7 @@ class Comparator():
                 results = []
                 for _ in range(n_runs):
                     signal, limits = exp.generate(complete_size=complete_size, fs=fs)
-                    values, start_sample = metric.calc_data(data=signal, window_size=window_size, overlap=overlap)
+                    values, start_sample = metric.calc_data(data=signal, window_size=exp.window_size, overlap=exp.overlap)
                     results.append(values)
 
                     if len(exp.metric_list) == 1:

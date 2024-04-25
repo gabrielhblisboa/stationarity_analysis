@@ -33,18 +33,19 @@ def main():
 
                 file_basename = f"{base_dir}/{transitions} {signal}"
 
-                exp = syn_exp.Experiment(signal1=signal,
+                exp = syn_exp.Experiment(name='test_syn',
+                                         signal1=signal,
                                          psd_signal1=start_psd_db,
                                          signal2=signal,
                                          psd_signal2=end_psd_db,
                                          transition=transitions,
+                                         window_size=4096,
+                                         overlap=0,
                                          metric_list=metric_list)
 
                 exp.run(file_basename=file_basename,
                         complete_size=n_samples,
-                        fs=fs,
-                        window_size=4096,
-                        overlap=0)
+                        fs=fs)
 
 
 if __name__ == "__main__":

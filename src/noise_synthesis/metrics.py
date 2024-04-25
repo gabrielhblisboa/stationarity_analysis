@@ -8,6 +8,7 @@ import scipy.special
 import scipy.signal as sgn
 
 import statsmodels.tsa.stattools as stats
+import arch.unitroot as arch_root
 
 import noise_synthesis.noise as syn_noise
 
@@ -127,31 +128,40 @@ class Metrics():
             window2 = data[start_sample + window_size//2:start_sample + window_size]
 
             metrics.append(self.calc_block(window1, window2))
-            eq_sample.append(start_sample)
+            eq_sample.append(start_sample + window_size//2)
 
         return metrics, eq_sample
 
-class ADF(Metrics):
+class StatisticTest(Metrics):
 
-    def __init__(self) -> None:
+    class Type(enum.Enum):
+        ADF = 0
+        KPSS = 1
+        PhillipsPerron = 2
+
+        def __str__(self) -> str:
+            return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
+
+    def __init__(self, type: Type) -> None:
         super().__init__(type, None, None)
+        self.type = type
 
     def calc_block(self, window1: np.array, window2: np.array) -> float:
-        # 1%: -3.432
-        # 5%: -2.862
-        # 10%: -2.567
-        result = stats.adfuller(np.concatenate((window1, window2)))
-        # print('\tADF Statistic: %f' % result[0])
-        # print('\tp-value: %f' % result[1])
-        # print('\tCritical Values:')
-        # for key, value in result[4].items():
-        #     print('\t\t%s: %.3f' % (key, value))
-        return result[0]
-    
+        if self.type == StatisticTest.Type.ADF:
+            result = arch_root.ADF(np.concatenate((window1, window2)))
+        elif self.type == StatisticTest.Type.KPSS:
+            result = arch_root.KPSS(np.concatenate((window1, window2)))
+        elif self.type == StatisticTest.Type.PhillipsPerron:
+            result = arch_root.PhillipsPerron(np.concatenate((window1, window2)))
+        else:
+            raise NotImplementedError(f"calck block not implemented for {self.type}")
 
-    def calc_pvalue(self, window1: np.array, window2: np.array) -> float:
-        result = stats.adfuller(np.concatenate((window1, window2)))
-        return result[1]
+        # print('\tPhillipsPerron Statistic: %f' % result.stat)
+        # print('\tp-value: %f' % result.pvalue)
+        # print('\tCritical Values:')
+        # for key, value in result.critical_values.items():
+        #     print('\t\t%s: %.3f' % (key, value))
+        return result.stat
 
     def __str__(self) -> str:
-        return f'ADF'
+        return str(self.type)

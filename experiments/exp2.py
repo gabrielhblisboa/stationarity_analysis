@@ -37,6 +37,8 @@ def main(n_runs: int):
                                  signal2=signal,
                                  psd_signal2=end_psd_db,
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
+                                 window_size = 4*1024,
+                                 overlap = 0.75,
                                  metric_list=metric_list))
 
     exp_list2 = []
@@ -52,21 +54,19 @@ def main(n_runs: int):
                                  signal2=signal,
                                  psd_signal2=end_psd_db,
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
+                                 window_size = 4*1024,
+                                 overlap = 0.75,
                                  metric_list=metric_list))
 
     comparer = syn_exp.Comparator(experiment_list=exp_list1)
     comparer.run(file_basename = f"{base_dir}/colored_bar",
                  complete_size = n_samples,
                  fs = fs,
-                 window_size = 4*1024,
-                 overlap = 0.75,
                  n_runs = n_runs,
                  error_bar=True)
     comparer.run(file_basename = f"{base_dir}/colored",
                  complete_size = n_samples,
                  fs = fs,
-                 window_size = 4*1024,
-                 overlap = 0.75,
                  n_runs = n_runs,
                  error_bar=False)
 
@@ -74,15 +74,11 @@ def main(n_runs: int):
     comparer.run(file_basename = f"{base_dir}/band_bar",
                  complete_size = n_samples,
                  fs = fs,
-                 window_size = 4*1024,
-                 overlap = 0.75,
                  n_runs = n_runs,
                  error_bar=True)
     comparer.run(file_basename = f"{base_dir}/band",
                  complete_size = n_samples,
                  fs = fs,
-                 window_size = 4*1024,
-                 overlap = 0.75,
                  n_runs = n_runs,
                  error_bar=False)
 
