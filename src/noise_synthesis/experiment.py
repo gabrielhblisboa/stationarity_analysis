@@ -2,6 +2,7 @@ import enum
 import typing
 import tqdm
 
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io.wavfile as wav_file
@@ -10,6 +11,7 @@ import tikzplotlib as tikz
 import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
 import noise_synthesis.signals as syn_signals
+import noise_synthesis.detector as syn_detector
 
 
 class AmplitudeTransitionType(enum.Enum):
@@ -126,6 +128,9 @@ class Experiment():
         signal, _ = self.generate(complete_size=complete_size, fs=fs)
         wav_file.write(f'{file_basename}.wav', fs, syn_noise.normalize(signal, type=1))
 
+    def __str__(self) -> str:
+        return self.name
+
 class Comparator():
     def __init__(self, experiment_list) -> None:
         self.experiment_list = experiment_list
@@ -171,3 +176,45 @@ class Comparator():
         fig.tight_layout()
         plt.savefig(f'{file_basename}.png')
         plt.close()
+
+    def detect(self, detector: syn_detector.Detector, complete_size: int, fs: float, n_runs = 100):
+
+        columns=['Experiment', 'Metric', 'Mean_TP', 'Std_TP', 'Mean_FP', 'Std_FP']
+        results_df = pd.DataFrame(columns=columns)
+
+        for exp in tqdm.tqdm(self.experiment_list, leave=False, desc="Experiment"):
+
+            for metric in exp.metric_list:
+
+                TP, FP = [], []
+
+                for _ in range(n_runs):
+                    signal, limits = exp.generate(complete_size=complete_size, fs=fs)
+
+                    values, start_sample = metric.calc_data(data=signal,
+                                                            window_size=exp.window_size,
+                                                            overlap=exp.overlap)
+
+                    intervals = []
+                    for limit in limits:
+                        start_index = np.where(np.array(start_sample) >= limit)[0][0] - 1
+                        end_index = np.where(np.array(start_sample) > limit + exp.window_size)[0][0]
+                        intervals.append([start_index, end_index])
+
+                    tp, fp = detector.run(input_data=np.array(values), intervals=intervals)
+
+                    TP.extend([tp])
+                    FP.extend([fp])
+
+                results_df = pd.concat([results_df, pd.DataFrame({
+                                                    columns[0]: str(exp),
+                                                    columns[1]: str(metric),
+                                                    columns[2]: np.mean(TP),
+                                                    columns[3]: np.std(TP),
+                                                    columns[4]: np.mean(FP),
+                                                    columns[5]: np.std(FP)
+                                                }, index=[0])
+                                        ],
+                                        ignore_index=True)
+
+        return results_df
