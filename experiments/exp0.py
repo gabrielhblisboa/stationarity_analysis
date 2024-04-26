@@ -38,7 +38,7 @@ def main(n_runs: int):
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
                                  window_size=4*1024,
                                  overlap=0.5,
-                                 metric_list=metric_list)
+                                 metrics=metric_list)
 
         exp.run(file_basename=file_basename,
                 complete_size=n_samples,

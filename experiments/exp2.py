@@ -39,7 +39,7 @@ def main(n_runs: int):
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
                                  window_size = 4*1024,
                                  overlap = 0.75,
-                                 metric_list=metric_list))
+                                 metrics=metric_list))
 
     exp_list2 = []
     for type in [syn_signals.SyntheticSignal.Type.LOW,
@@ -56,7 +56,7 @@ def main(n_runs: int):
                                  transition=syn_exp.AmplitudeTransitionType.ABRUPT,
                                  window_size = 4*1024,
                                  overlap = 0.75,
-                                 metric_list=metric_list))
+                                 metrics=metric_list))
 
     comparer = syn_exp.Comparator(experiment_list=exp_list1)
     comparer.run(file_basename = f"{base_dir}/colored_bar",

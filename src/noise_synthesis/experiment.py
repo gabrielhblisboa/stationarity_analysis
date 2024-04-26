@@ -14,128 +14,95 @@ import noise_synthesis.signals as syn_signals
 import noise_synthesis.detector as syn_detector
 
 
-class AmplitudeTransitionType(enum.Enum):
-    ABRUPT = 0
-    LINEAR = 1
-    SINUSOIDAL = 2
-
-    def __str__(self) -> str:
-        return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
-
-    def apply(self, signal1: np.array, signal2: np.array, transition_samples: typing.Union[int, float] = None) -> typing.Tuple[np.array, typing.List[int]]:
-
-        output = np.copy(signal1)
-        n_samples = len(output)
-
-        if transition_samples is None:
-            transition_samples = int(0.1 * n_samples)
-        elif not isinstance(transition_samples, int):
-            transition_samples = int(transition_samples * n_samples)
-
-
-        transition_start = int(n_samples * 0.33)
-        transition_end = int(n_samples * 0.67)
-
-        if self == AmplitudeTransitionType.ABRUPT:
-            limits = [transition_start, transition_end]
-        else:
-            transition_start -= transition_samples//2
-            transition_end += transition_samples//2
-
-            limits = [transition_start,
-                      transition_end - transition_samples,
-                      transition_start + transition_samples,
-                      transition_end]
-
-            for n in range(1, transition_samples):
-
-                if self == AmplitudeTransitionType.LINEAR:
-                    factor = (n / transition_samples)
-                elif self == AmplitudeTransitionType.SINUSOIDAL:
-                    factor = np.cos(np.pi/2 * (n / transition_samples))
-
-                output[transition_start+n] = factor * signal1[transition_start+n] + \
-                                            (1-factor) * signal2[transition_start+n]
-
-                output[transition_end-n] = factor * signal1[transition_end-n] + \
-                                            (1-factor) * signal1[transition_end-n]
-
-        output[transition_start:transition_end] = signal2[transition_start:transition_end]
-
-        return output, limits
-
-
 class Experiment():
 
     def __init__(self,
-                 name: str,
-                 signal1: syn_signals.SyntheticSignal,
-                 psd_signal1: float,
-                 signal2: syn_signals.SyntheticSignal,
-                 psd_signal2: float,
-                 transition: AmplitudeTransitionType,
+                 generator: syn_signals.Generator,
+                 metrics: syn_metrics.Metrics,
+                 detector: syn_detector.Detector,
                  window_size: int,
-                 overlap: float,
-                 metric_list: typing.List[syn_metrics.Metrics]) -> None:
-        self.name = name
-        self.signal1 = signal1
-        self.psd_signal1 = psd_signal1
-        self.signal2 = signal2
-        self.psd_signal2 = psd_signal2
-        self.transition = transition
+                 overlap: float,) -> None:
+        self.generator = generator
+        self.metrics = metrics
+        self.detector = detector
         self.window_size = window_size
-        self.metric_list = metric_list
         self.overlap = overlap
 
-    def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[int]]:
-        signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
-        signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
-        return self.transition.apply(signal1=signal1, signal2=signal2)
+    def boxplot(self, file_basename: str, complete_size: int, fs: float, n_runs: int) -> None:
 
-    def run(self, file_basename: str, complete_size: int, fs: float, n_runs = 100) -> None:
+        results = []
 
-        for metric in self.metric_list:
-            results = []
+        fig, ax = plt.subplots(figsize=(12, 8))
 
-            fig, ax = plt.subplots(figsize=(12, 8))
+        for _ in range(n_runs):
+            values, start_sample, limits = self.calculate(complete_size=complete_size, fs=fs)
+            results.append(values)
 
-            for _ in range(n_runs):
-                signal, limits = self.generate(complete_size=complete_size, fs=fs)
-                values, start_sample = metric.calc_data(data=signal, window_size=self.window_size, overlap=self.overlap)
-                results.append(values)
+        ax.boxplot(np.array(results))
 
-            ax.boxplot(np.array(results))
+        indices = np.linspace(0, len(start_sample) - 1, 5, dtype=int)
+        ax.set_xticks([i for i in indices])
+        ax.set_xticklabels([f'{start_sample[i]/fs:.2f}s' for i in indices])
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Intensity')
 
-            indices = np.linspace(0, len(start_sample) - 1, 5, dtype=int)
-            ax.set_xticks([i for i in indices])
-            ax.set_xticklabels([f'{start_sample[i]/fs:.2f}s' for i in indices])
-            ax.set_xlabel('Time (s)')
-            ax.set_ylabel('Intensity')
+        for limit in limits:
+            index = np.where(np.array(start_sample) + self.window_size > limit)[0][0]
+            ax.axvline(x=index, color='red', linewidth=1.5) #linestyle='--',
 
+            index = np.where(np.array(start_sample) > limit)[0][0]
+            ax.axvline(x=index, color='blue', linewidth=1.5)
+            
+
+        plt.savefig(f'{file_basename}_{self.metrics}.png')
+        tikz.save(f'{file_basename}_{self.metrics}.tex')
+        plt.close()
+
+    def calculate(self, complete_size: int, fs: float):
+
+        signal, limits = self.generator.generate(complete_size=complete_size, fs=fs)
+
+        values, start_sample = self.metrics.calc_data(data=signal,
+                                                window_size=self.window_size,
+                                                overlap=self.overlap)
+        return values, start_sample, limits
+
+    def execute(self, complete_size: int, fs: float, n_runs: int):
+        TP, FP = [], []
+
+        for _ in range(n_runs):
+
+            values, start_sample, limits = self.calculate(complete_size, fs)
+
+            intervals = []
             for limit in limits:
-                index = np.where(np.array(start_sample) + self.window_size > limit)[0][0]
-                ax.axvline(x=index, color='red', linewidth=1.5) #linestyle='--',
+                start_index = np.where(np.array(start_sample) >= limit)[0][0] - 1
+                end_index = np.where(np.array(start_sample) > limit + self.window_size)[0][0]
+                intervals.append([start_index, end_index])
 
-                index = np.where(np.array(start_sample) > limit)[0][0]
-                ax.axvline(x=index, color='blue', linewidth=1.5)
-                
+            tp, fp = self.detector.run(input_data=np.array(values), intervals=intervals)
 
-            plt.savefig(f'{file_basename}_{metric}.png')
-            tikz.save(f'{file_basename}_{metric}.tex')
-            plt.close()
+            TP.extend([tp])
+            FP.extend([fp])
 
-    def save_sample(self, file_basename: str, complete_size: int, fs: float) -> None:
-        signal, _ = self.generate(complete_size=complete_size, fs=fs)
-        wav_file.write(f'{file_basename}.wav', fs, syn_noise.normalize(signal, type=1))
+        TP = np.array(TP)
+        FP = np.array(FP)
 
-    def __str__(self) -> str:
-        return self.name
+        return f'{np.mean(TP)*100:.2f} ± {np.std(TP)*100:.2f}', \
+                f'{np.mean(FP)*100:.2f} ± {np.std(FP)*100:.2f}'
+
 
 class Comparator():
-    def __init__(self, experiment_list) -> None:
-        self.experiment_list = experiment_list
 
-    def run(self, file_basename: str, complete_size: int, fs: float, n_runs = 100, error_bar = False) -> None:
+    def __init__(self) -> None:
+        self.experiment_params = []
+        self.experiment_list = []
+
+    def add_exp(self, params_ids, experiment: Experiment) -> None:
+        self.experiment_params.append(params_ids)
+        self.experiment_list.append(experiment)
+
+    def plot(self, file_basename: str, complete_size: int, fs: float, n_runs = 100, error_bar = False) -> None:
 
         fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -177,44 +144,37 @@ class Comparator():
         plt.savefig(f'{file_basename}.png')
         plt.close()
 
-    def detect(self, detector: syn_detector.Detector, complete_size: int, fs: float, n_runs = 100):
+    def execute(self, complete_size: int, fs: float, n_runs = 100):
 
-        columns=['Experiment', 'Metric', 'Mean_TP', 'Std_TP', 'Mean_FP', 'Std_FP']
+        headers = []
+        for param_pack in self.experiment_params:
+            for key, value in param_pack.items():
+                headers.append(key)
+
+        headers = list(set(headers))
+
+        columns = headers.copy()
+        columns.extend(['TP', 'FP'])
+
         results_df = pd.DataFrame(columns=columns)
 
-        for exp in tqdm.tqdm(self.experiment_list, leave=False, desc="Experiment"):
+        for i in tqdm.tqdm(range(len(self.experiment_list)), leave=False, desc="Experiment"):
 
-            for metric in exp.metric_list:
+            tp, fp = self.experiment_list[i].execute(complete_size=complete_size,
+                                                     fs=fs,
+                                                     n_runs=n_runs)
+            
+            result_dict = {}
+            for header in headers:
+                if header in self.experiment_params[i]:
+                    result_dict[header] = self.experiment_params[i][header]
+                else:
+                    result_dict[header] = ' - '
 
-                TP, FP = [], []
+            result_dict['TP'] = tp
+            result_dict['FP'] = fp
 
-                for _ in range(n_runs):
-                    signal, limits = exp.generate(complete_size=complete_size, fs=fs)
-
-                    values, start_sample = metric.calc_data(data=signal,
-                                                            window_size=exp.window_size,
-                                                            overlap=exp.overlap)
-
-                    intervals = []
-                    for limit in limits:
-                        start_index = np.where(np.array(start_sample) >= limit)[0][0] - 1
-                        end_index = np.where(np.array(start_sample) > limit + exp.window_size)[0][0]
-                        intervals.append([start_index, end_index])
-
-                    tp, fp = detector.run(input_data=np.array(values), intervals=intervals)
-
-                    TP.extend([tp])
-                    FP.extend([fp])
-
-                results_df = pd.concat([results_df, pd.DataFrame({
-                                                    columns[0]: str(exp),
-                                                    columns[1]: str(metric),
-                                                    columns[2]: np.mean(TP),
-                                                    columns[3]: np.std(TP),
-                                                    columns[4]: np.mean(FP),
-                                                    columns[5]: np.std(FP)
-                                                }, index=[0])
-                                        ],
-                                        ignore_index=True)
+            results_df = pd.concat([results_df, pd.DataFrame(result_dict, index=[0])],
+                                    ignore_index=True)
 
         return results_df

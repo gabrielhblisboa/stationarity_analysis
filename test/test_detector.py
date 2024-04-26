@@ -1,6 +1,8 @@
 
 import os
 import math
+import itertools
+
 import numpy as np
 import scipy.io.wavfile as scipy_wav
 import matplotlib.pyplot as plt
@@ -23,31 +25,40 @@ def main():
     base_dir = f"./result/detector"
     os.makedirs(base_dir, exist_ok = True)
 
-    metric_list = []
-    for estimator in [syn_metrics.DataEstimator.PDF]:
-        metric_list.append(syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN, estimator=estimator))
-
+    metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN, estimator=syn_metrics.DataEstimator.PDF)
     signal = syn_signals.SyntheticSignal(type=syn_signals.SyntheticSignal.Type.WHITE)
+    generator = syn_signals.Generator(signal1=signal,
+                                      psd_signal1=start_psd_db,
+                                      signal2=signal,
+                                      psd_signal2=end_psd_db,
+                                      transition=syn_signals.AmplitudeTransitionType.ABRUPT)
 
-    file_basename = f"{base_dir}/{signal}"
+    params = {
+        'Memory size': [32, 64, 128],
+        'Threshold': [3, 4, 5],
+    }
 
-    exp = syn_exp.Experiment(name='test_syn',
-                                signal1=signal,
-                                psd_signal1=start_psd_db,
-                                signal2=signal,
-                                psd_signal2=end_psd_db,
-                                transition=syn_exp.AmplitudeTransitionType.ABRUPT,
-                                window_size=4*1024,
-                                overlap=0.75,
-                                metric_list=metric_list)
-    
-    comp = syn_exp.Comparator(experiment_list=[exp])
+    param_pack_list = []
+    experiment_list = []
 
-    df = comp.detect(detector=syn_detector.Detector(memory_size=128, threshold=5),
-                complete_size=n_samples,
-                fs=fs,
-                n_runs=100)
+    comp = syn_exp.Comparator()
 
+    combinations = list(itertools.product(*params.values()))
+    for combination in combinations:
+        param_pack = dict(zip(params.keys(), combination))
+
+        detector = syn_detector.Detector(memory_size=param_pack['Memory size'],
+                                       threshold=param_pack['Threshold'])
+
+        comp.add_exp(params_ids=param_pack,
+                     experiment=syn_exp.Experiment(
+                            detector=detector,
+                            metrics=metrics,
+                            generator=generator,
+                            window_size=4*1024,
+                            overlap=0.75))
+
+    df = comp.execute(complete_size=n_samples, fs=fs, n_runs=20)
     print(df)
 
 

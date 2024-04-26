@@ -48,7 +48,7 @@ def main():
                                      transition=transitions,
                                      window_size=4096,
                                      overlap=0,
-                                     metric_list=metric_list)
+                                     metrics=metric_list)
 
             exp.run(file_basename=file_basename,
                     complete_size=n_samples,
