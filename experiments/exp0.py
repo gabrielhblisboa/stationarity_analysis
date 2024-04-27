@@ -19,6 +19,9 @@ def main(n_runs: int):
 
     params = {
         'StatisticTest': syn_metrics.StatisticTest.Type,
+        'Signal': [syn_signals.SyntheticSignal.Type.WHITE,
+                   syn_signals.SyntheticSignal.Type.BROWN,
+                   syn_signals.SyntheticSignal.Type.PINK],
     }
 
     comp = syn_exp.Comparator()
@@ -28,7 +31,7 @@ def main(n_runs: int):
         param_pack = dict(zip(params.keys(), combination))
 
         metrics = syn_metrics.StatisticTest(type=param_pack['StatisticTest'])
-        signal=syn_signals.SyntheticSignal(type=syn_signals.SyntheticSignal.Type.WHITE)
+        signal=syn_signals.SyntheticSignal(type=param_pack['Signal'])
         generator = syn_signals.Generator(signal1=signal,
                                         psd_signal1=config.psd_db,
                                         signal2=signal,
