@@ -34,7 +34,8 @@ class Experiment():
 
         fig, ax = plt.subplots(figsize=(12, 8))
 
-        for _ in range(n_runs):
+        syn_noise.set_seed()
+        for _ in tqdm.tqdm(range(n_runs), leave=False, desc="Run"):
             values, start_sample, limits = self.calculate(complete_size=complete_size, fs=fs)
             results.append(values)
 
@@ -47,15 +48,14 @@ class Experiment():
         ax.set_ylabel('Intensity')
 
         for limit in limits:
-            index = np.where(np.array(start_sample) + self.window_size > limit)[0][0]
-            ax.axvline(x=index, color='red', linewidth=1.5) #linestyle='--',
-
-            index = np.where(np.array(start_sample) > limit)[0][0]
-            ax.axvline(x=index, color='blue', linewidth=1.5)
+            start_index = np.where(np.array(start_sample) >= limit[0] - self.window_size)[0][0]
+            end_index = np.where(np.array(start_sample) >= limit[1])[0][0]
+            ax.axvline(x=start_index, color='red', linewidth=1.5) #linestyle='--',
+            ax.axvline(x=end_index, color='blue', linewidth=1.5)
             
 
-        plt.savefig(f'{file_basename}_{self.metrics}.png')
-        tikz.save(f'{file_basename}_{self.metrics}.tex')
+        plt.savefig(f'{file_basename}.png')
+        tikz.save(f'{file_basename}.tex')
         plt.close()
 
     def calculate(self, complete_size: int, fs: float):
@@ -65,19 +65,21 @@ class Experiment():
         values, start_sample = self.metrics.calc_data(data=signal,
                                                 window_size=self.window_size,
                                                 overlap=self.overlap)
+
         return values, start_sample, limits
 
     def execute(self, complete_size: int, fs: float, n_runs: int):
         TP, FP = [], []
 
-        for _ in range(n_runs):
+        syn_noise.set_seed()
+        for _ in tqdm.tqdm(range(n_runs), leave=False, desc="Run"):
 
             values, start_sample, limits = self.calculate(complete_size, fs)
 
             intervals = []
             for limit in limits:
-                start_index = np.where(np.array(start_sample) >= limit)[0][0] - 1
-                end_index = np.where(np.array(start_sample) > limit + self.window_size)[0][0]
+                start_index = np.where(np.array(start_sample) >= limit[0] - self.window_size)[0][0]
+                end_index = np.where(np.array(start_sample) >= limit[1])[0][0]
                 intervals.append([start_index, end_index])
 
             tp, fp = self.detector.run(input_data=np.array(values), intervals=intervals)
@@ -144,7 +146,7 @@ class Comparator():
         plt.savefig(f'{file_basename}.png')
         plt.close()
 
-    def execute(self, complete_size: int, fs: float, n_runs = 100):
+    def execute(self, complete_size: int, fs: float, n_runs = 100, label = "Experiment"):
 
         headers = []
         for param_pack in self.experiment_params:
@@ -158,7 +160,7 @@ class Comparator():
 
         results_df = pd.DataFrame(columns=columns)
 
-        for i in tqdm.tqdm(range(len(self.experiment_list)), leave=False, desc="Experiment"):
+        for i in tqdm.tqdm(range(len(self.experiment_list)), leave=False, desc=label):
 
             tp, fp = self.experiment_list[i].execute(complete_size=complete_size,
                                                      fs=fs,

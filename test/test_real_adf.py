@@ -17,7 +17,7 @@ def main():
     fs = 52734
     baseline_psd_db = 0
 
-    base_dir = f"./result/test_exp/real/"
+    base_dir = f"./result/test/adf/"
     os.makedirs(base_dir, exist_ok = True)
 
     adf = syn_metrics.StatisticTest(syn_metrics.StatisticTest.Type.ADF)
@@ -33,6 +33,11 @@ def main():
             data = signal.generate(n_samples=int(n_samples*fs),
                                 fs=fs,
                                 baseline_psd_db=baseline_psd_db)
+
+            metrics, _ = adf.calc_data(data=data, window_size=4*1024, overlap=0.75)
+
+            print(np.min(metrics), ' -> ', np.max(metrics))
+
 
 if __name__ == "__main__":
     main()

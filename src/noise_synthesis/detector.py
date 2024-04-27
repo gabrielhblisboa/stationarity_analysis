@@ -6,13 +6,16 @@ import matplotlib.pyplot as plt
 
 class Detector():
 
-    def __init__(self, memory_size: int, threshold: float) -> None:
+    def __init__(self, memory_size: int = 128, threshold: float = 3) -> None:
         self.memory_size = memory_size
         self.threshold = threshold
 
     def run(self, input_data: np.array, intervals: typing.List[typing.Tuple[int, int]]):
         tp = 0
         fp = 0
+
+        if self.memory_size > len(input_data):
+            raise UnboundLocalError(f"invalid data size memory_size[{self.memory_size}] and data with {len(input_data)} sample")
 
         results = []
         for i in range(self.memory_size, len(input_data)):

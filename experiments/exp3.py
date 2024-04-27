@@ -20,10 +20,7 @@ def main(n_runs: int):
     os.makedirs(base_dir, exist_ok = True)
 
     params = {
-        'Signal': [syn_signals.SyntheticSignal.Type.LOW,
-                   syn_signals.SyntheticSignal.Type.MEDIUM_LOW,
-                   syn_signals.SyntheticSignal.Type.MEDIUM_HIGH,
-                   syn_signals.SyntheticSignal.Type.HIGH]
+        'window size': [1024, 2*1024, 4*1024, 8*1024, 16*1024, 32*1024, 64*1024]
     }
 
     comp = syn_exp.Comparator()
@@ -35,7 +32,7 @@ def main(n_runs: int):
         metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN,
                                       estimator=syn_metrics.DataEstimator.PDF,
                                       n_points=config.n_points)
-        signal=syn_signals.SyntheticSignal(type=param_pack['Signal'])
+        signal=syn_signals.SyntheticSignal(type=config.noise)
         generator = syn_signals.Generator(signal1=signal,
                                         psd_signal1=config.psd_db,
                                         signal2=signal,
@@ -46,12 +43,12 @@ def main(n_runs: int):
         experiment = syn_exp.Experiment(detector=detector,
                                       metrics=metrics,
                                       generator=generator,
-                                      window_size=config.window_size,
+                                      window_size=param_pack['window size'],
                                       overlap=config.overlap)
 
         comp.add_exp(params_ids=param_pack, experiment=experiment)
 
-    df = comp.execute(complete_size=config.n_samples, fs=config.fs, n_runs=n_runs)
+    df = comp.execute(complete_size=config.n_samples * 6, fs=config.fs, n_runs=n_runs)
     df.to_pickle(f"{base_dir}.pkl")
     df.to_latex(f"{base_dir}.tex", index_names=False)
     print(df)

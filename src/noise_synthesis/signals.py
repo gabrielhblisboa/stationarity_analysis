@@ -160,7 +160,7 @@ class AmplitudeTransitionType(enum.Enum):
     def __str__(self) -> str:
         return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
 
-    def apply(self, signal1: np.array, signal2: np.array, transition_samples: typing.Union[int, float] = None) -> typing.Tuple[np.array, typing.List[int]]:
+    def apply(self, signal1: np.array, signal2: np.array, transition_samples: typing.Union[int, float] = None) -> typing.Tuple[np.array, typing.List[typing.Tuple[int, int]]]:
 
         output = np.copy(signal1)
         n_samples = len(output)
@@ -175,15 +175,13 @@ class AmplitudeTransitionType(enum.Enum):
         transition_end = int(n_samples * 0.67)
 
         if self == AmplitudeTransitionType.ABRUPT:
-            limits = [transition_start, transition_end]
+            limits = [[transition_start, transition_start], [transition_end, transition_end]]
         else:
             transition_start -= transition_samples//2
             transition_end += transition_samples//2
 
-            limits = [transition_start,
-                      transition_end - transition_samples,
-                      transition_start + transition_samples,
-                      transition_end]
+            limits = [[transition_start, transition_end - transition_samples],
+                      [transition_start + transition_samples, transition_end]]
 
             for n in range(1, transition_samples):
 
@@ -217,7 +215,7 @@ class Generator():
         self.psd_signal2 = psd_signal2
         self.transition = transition
 
-    def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[int]]:
+    def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[typing.Tuple[int, int]]]:
         signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
         signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
         return self.transition.apply(signal1=signal1, signal2=signal2)

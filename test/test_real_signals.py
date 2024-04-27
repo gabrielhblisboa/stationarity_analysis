@@ -13,7 +13,7 @@ def main():
     """Main function for the test program."""
 
     # Set up the directory for saving results
-    base_dir = "./result/signals/real"
+    base_dir = "./result/test/signals/real"
     os.makedirs(base_dir, exist_ok = True)
 
     # Set parameters for synthetic noise generation

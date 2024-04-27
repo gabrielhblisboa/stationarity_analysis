@@ -1,6 +1,13 @@
-
+import random
 import numpy as np
 import scipy.signal as scipy
+
+
+def set_seed():
+    """ Set random seed for reproducibility. """
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 def generate_noise(frequencies: np.array, psd_db: np.array, n_samples: int, fs: float) -> np.array:

@@ -1,57 +1,72 @@
 
 import os
 import argparse
-
-import numpy as np
+import itertools
+import tqdm
 
 import noise_synthesis.metrics as syn_metrics
 import noise_synthesis.signals as syn_signals
 import noise_synthesis.experiment as syn_exp
+import noise_synthesis.detector as syn_detector
 
+import config
 
 def main(n_runs: int):
     """Main function for the test program."""
 
-    # Set parameters for synthetic noise generation
-    fs = 52734
-    n_samples = int(2 * fs)
-    psd_db = -np.log10(fs/2)*20  # psd de um ruido branco de variancia 1
-    end_psd_db = psd_db + 6
-
     base_dir = f"./result/{os.path.splitext(os.path.basename(__file__))[0]}"
     os.makedirs(base_dir, exist_ok = True)
 
-    metric_list = []
-    for type in syn_metrics.StatisticTest.Type:
-        metric_list.append(syn_metrics.StatisticTest(type))
+    params = {
+        'StatisticTest': syn_metrics.StatisticTest.Type,
+    }
 
-    for type in [syn_signals.SyntheticSignal.Type.WHITE]:
-        signal = syn_signals.SyntheticSignal(type=type)
+    comp = syn_exp.Comparator()
 
-        file_basename = f"{base_dir}/{signal}"
+    combinations = list(itertools.product(*params.values()))
+    for combination in tqdm.tqdm(combinations, desc='Plotting', leave=False):
+        param_pack = dict(zip(params.keys(), combination))
 
-        exp = syn_exp.Experiment(name='exp_0',
-                                 signal1=signal,
-                                 psd_signal1=psd_db,
-                                 signal2=signal,
-                                 psd_signal2=end_psd_db,
-                                 transition=syn_exp.AmplitudeTransitionType.ABRUPT,
-                                 window_size=4*1024,
-                                 overlap=0.5,
-                                 metrics=metric_list)
+        metrics = syn_metrics.StatisticTest(type=param_pack['StatisticTest'])
+        signal=syn_signals.SyntheticSignal(type=syn_signals.SyntheticSignal.Type.WHITE)
+        generator = syn_signals.Generator(signal1=signal,
+                                        psd_signal1=config.psd_db,
+                                        signal2=signal,
+                                        psd_signal2=config.end_psd_db,
+                                        transition=syn_signals.AmplitudeTransitionType.ABRUPT)
+        detector = syn_detector.Detector(memory_size=config.memory_size,
+                                         threshold=config.threshold)
+        experiment = syn_exp.Experiment(detector=detector,
+                                      metrics=metrics,
+                                      generator=generator,
+                                      window_size=config.window_size,
+                                      overlap=config.overlap)
 
-        exp.run(file_basename=file_basename,
-                complete_size=n_samples,
-                fs=fs,
-                n_runs=n_runs)
+        file_basename = f"{base_dir}/"
+        for _, value in param_pack.items():
+            file_basename = f'{file_basename}{str(value)} '
 
-        exp.save_sample(file_basename=file_basename,
-                complete_size=n_samples,
-                fs=fs)
+        generator.save_sample(file_basename = file_basename,
+                              complete_size = config.n_samples,
+                              fs = config.fs)
+
+        experiment.boxplot(file_basename = file_basename,
+                           complete_size = config.n_samples,
+                           fs = config.fs,
+                           n_runs = n_runs)
+
+        comp.add_exp(params_ids=param_pack, experiment=experiment)
+
+
+    df = comp.execute(complete_size=config.n_samples, fs=config.fs, n_runs=n_runs)
+    df.to_pickle(f"{base_dir}.pkl")
+    df.to_latex(f"{base_dir}.tex", index_names=False)
+    print(df)
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=f'Run experiment {os.path.splitext(os.path.basename(__file__))[0]}')
-    parser.add_argument('--n_runs', default=100, type=int, help='Number of runs')
+    parser.add_argument('--n_runs', default=config.n_runs, type=int, help='Number of runs')
     args = parser.parse_args()
     main(n_runs = args.n_runs)
