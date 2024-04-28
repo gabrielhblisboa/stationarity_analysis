@@ -38,7 +38,8 @@ class DataEstimator(enum.Enum):
             frequencies, power1 = syn_noise.psd(signal=window1, fs=1, window_size=n_points*2)
             _, power2 = syn_noise.psd(signal=window2, fs=1, window_size=n_points*2)
 
-            return power1/np.sum(power1), power2/np.sum(power2), frequencies
+            # return power1/np.sum(power1), power2/np.sum(power2), frequencies
+            return power1, power2, frequencies
 
         raise NotImplementedError(f"apply {str(self)} not implemented")
 
@@ -76,7 +77,7 @@ class Metrics():
     class Type(enum.Enum):
         KL_DIVERGENCE = 0,
         SYMMETRIC_KL_DIVERGENCE = 1
-        WASSERTEIN = 2
+        WASSERSTEIN = 2
         JENSEN_SHANNON = 3
 
         def __str__(self) -> str:
@@ -93,7 +94,7 @@ class Metrics():
                 return np.max([Metrics.Type.KL_DIVERGENCE.apply(pdf1, pdf2),
                                Metrics.Type.KL_DIVERGENCE.apply(pdf2, pdf1)])
         
-            if self == Metrics.Type.WASSERTEIN:
+            if self == Metrics.Type.WASSERSTEIN:
                 return scipy.stats.wasserstein_distance(pdf1, pdf2)
             
             if self == Metrics.Type.JENSEN_SHANNON:

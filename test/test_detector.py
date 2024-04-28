@@ -33,9 +33,9 @@ def main():
     # }
     params = {
         'window_size': [16*1024],
-        'n_points': [64],
+        'n_points': [32],
         'Memory size': [32],
-        'Threshold': [2.5],
+        'Threshold': [2, 3, 4],
         'Overlap': [0.75],
         'Signal': [syn_signals.SyntheticSignal.Type.WHITE,
                    syn_signals.SyntheticSignal.Type.BROWN],
@@ -47,7 +47,7 @@ def main():
     for combination in combinations:
         param_pack = dict(zip(params.keys(), combination))
 
-        metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN,
+        metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERSTEIN,
                                     estimator=syn_metrics.DataEstimator.PDF,
                                     n_points=param_pack['n_points'])
         signal = syn_signals.SyntheticSignal(type=param_pack['Signal'])
@@ -68,7 +68,7 @@ def main():
                             window_size=param_pack['window_size'],
                             overlap=param_pack['Overlap']))
 
-    df = comp.execute(complete_size=n_samples, fs=fs, n_runs=100)
+    df = comp.execute(complete_size=n_samples, fs=fs, n_runs=50)
     df.to_pickle(f"{base_dir}/detector.pkl")
     df.to_latex(f"{base_dir}/detector.tex", index=False)
     print(df)

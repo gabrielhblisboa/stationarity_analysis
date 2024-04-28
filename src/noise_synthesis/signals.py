@@ -2,6 +2,7 @@ import abc
 import enum
 import typing
 import os
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,9 @@ import scipy.io.wavfile as wav_file
 
 import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
+
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
 
 class Signal(abc.ABC):
 
@@ -156,6 +160,7 @@ class AmplitudeTransitionType(enum.Enum):
     ABRUPT = 0
     LINEAR = 1
     SINUSOIDAL = 2
+    SIGMOIDAL = 3
 
     def __str__(self) -> str:
         return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
@@ -189,6 +194,8 @@ class AmplitudeTransitionType(enum.Enum):
                     factor = (n / transition_samples)
                 elif self == AmplitudeTransitionType.SINUSOIDAL:
                     factor = np.cos(np.pi/2 * (n / transition_samples))
+                elif self == AmplitudeTransitionType.SINUSOIDAL:
+                    factor = sigmoid((n / transition_samples - 0.5) * 10)
 
                 output[transition_start+n] = factor * signal1[transition_start+n] + \
                                             (1-factor) * signal2[transition_start+n]
@@ -208,17 +215,19 @@ class Generator():
                  psd_signal1: float,
                  signal2: SyntheticSignal,
                  psd_signal2: float,
-                 transition: AmplitudeTransitionType,) -> None:
+                 transition: AmplitudeTransitionType,
+                 transition_samples: typing.Union[int, float] = None) -> None:
         self.signal1 = signal1
         self.psd_signal1 = psd_signal1
         self.signal2 = signal2
         self.psd_signal2 = psd_signal2
         self.transition = transition
+        self.transition_samples = transition_samples
 
     def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[typing.Tuple[int, int]]]:
         signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
         signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
-        return self.transition.apply(signal1=signal1, signal2=signal2)
+        return self.transition.apply(signal1=signal1, signal2=signal2, transition_samples=self.transition_samples)
 
     def save_sample(self, file_basename: str, complete_size: int, fs: float) -> None:
         signal, _ = self.generate(complete_size=complete_size, fs=fs)

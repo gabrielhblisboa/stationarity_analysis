@@ -23,7 +23,7 @@ def main(n_runs = 5):
 
     metric_list = []
     for estimator in [syn_metrics.DataEstimator.PDF]:
-        metric_list.append(syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN,
+        metric_list.append(syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERSTEIN,
                                                estimator=estimator))
     metric_list.append(syn_metrics.StatisticTest(syn_metrics.StatisticTest.Type.ADF))
 
