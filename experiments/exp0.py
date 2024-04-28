@@ -18,7 +18,8 @@ def main(n_runs: int):
     os.makedirs(base_dir, exist_ok = True)
 
     params = {
-        'StatisticTest': syn_metrics.StatisticTest.Type,
+        'StatisticTest': [syn_metrics.StatisticTest.Type.ADF,
+                          syn_metrics.StatisticTest.Type.PhillipsPerron],
         'Signal': [syn_signals.SyntheticSignal.Type.WHITE,
                    syn_signals.SyntheticSignal.Type.BROWN,
                    syn_signals.SyntheticSignal.Type.PINK],
@@ -27,7 +28,7 @@ def main(n_runs: int):
     comp = syn_exp.Comparator()
 
     combinations = list(itertools.product(*params.values()))
-    for combination in tqdm.tqdm(combinations, desc='Plotting', leave=False):
+    for i, combination in enumerate(combinations):
         param_pack = dict(zip(params.keys(), combination))
 
         metrics = syn_metrics.StatisticTest(type=param_pack['StatisticTest'])
@@ -39,11 +40,12 @@ def main(n_runs: int):
                                         transition=syn_signals.AmplitudeTransitionType.ABRUPT)
         detector = syn_detector.Detector(memory_size=config.memory_size,
                                          threshold=config.threshold)
-        experiment = syn_exp.Experiment(detector=detector,
-                                      metrics=metrics,
-                                      generator=generator,
-                                      window_size=config.window_size,
-                                      overlap=config.overlap)
+        experiment = syn_exp.Experiment(output_base_name=f"{base_dir}/{i}",
+                                        detector=detector,
+                                        metrics=metrics,
+                                        generator=generator,
+                                        window_size=config.window_size,
+                                        overlap=config.overlap)
 
         file_basename = f"{base_dir}/"
         for _, value in param_pack.items():
@@ -53,17 +55,17 @@ def main(n_runs: int):
                               complete_size = config.n_samples,
                               fs = config.fs)
 
-        experiment.boxplot(file_basename = file_basename,
-                           complete_size = config.n_samples,
-                           fs = config.fs,
-                           n_runs = n_runs)
+        # experiment.boxplot(file_basename = file_basename,
+        #                    complete_size = config.n_samples,
+        #                    fs = config.fs,
+        #                    n_runs = n_runs)
 
         comp.add_exp(params_ids=param_pack, experiment=experiment)
 
 
     df = comp.execute(complete_size=config.n_samples, fs=config.fs, n_runs=n_runs)
     df.to_pickle(f"{base_dir}.pkl")
-    df.to_latex(f"{base_dir}.tex", index_names=False)
+    df.style.hide(axis="index").to_latex(f"{base_dir}.tex")
     print(df)
 
 

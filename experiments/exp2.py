@@ -13,6 +13,7 @@ import noise_synthesis.detector as syn_detector
 
 import config
 
+
 def main(n_runs: int):
     """Main function for the test program."""
 
@@ -20,22 +21,22 @@ def main(n_runs: int):
     os.makedirs(base_dir, exist_ok = True)
 
     params = {
-        'Signal': [syn_signals.SyntheticSignal.Type.LOW,
-                   syn_signals.SyntheticSignal.Type.MEDIUM_LOW,
-                   syn_signals.SyntheticSignal.Type.MEDIUM_HIGH,
-                   syn_signals.SyntheticSignal.Type.HIGH]
+        'Sinal': [syn_signals.SyntheticSignal.Type.WHITE,
+                  syn_signals.SyntheticSignal.Type.BROWN,
+                  syn_signals.SyntheticSignal.Type.PINK],
+        '': syn_metrics.Metrics.Type
     }
 
     comp = syn_exp.Comparator()
 
     combinations = list(itertools.product(*params.values()))
-    for combination in combinations:
+    for i, combination in enumerate(combinations):
         param_pack = dict(zip(params.keys(), combination))
 
-        metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERSTEIN,
-                                      estimator=syn_metrics.DataEstimator.PDF,
+        metrics = syn_metrics.Metrics(type=param_pack[''],
+                                      estimator=syn_metrics.DataEstimator.FFT,
                                       n_points=config.n_points)
-        signal=syn_signals.SyntheticSignal(type=param_pack['Signal'])
+        signal=syn_signals.SyntheticSignal(type=param_pack['Sinal'])
         generator = syn_signals.Generator(signal1=signal,
                                         psd_signal1=config.psd_db,
                                         signal2=signal,
@@ -43,18 +44,20 @@ def main(n_runs: int):
                                         transition=syn_signals.AmplitudeTransitionType.ABRUPT)
         detector = syn_detector.Detector(memory_size=config.memory_size,
                                          threshold=config.threshold)
-        experiment = syn_exp.Experiment(detector=detector,
-                                      metrics=metrics,
-                                      generator=generator,
-                                      window_size=config.window_size,
-                                      overlap=config.overlap)
+        experiment = syn_exp.Experiment(output_base_name=f"{base_dir}/{i}",
+                                        detector=detector,
+                                        metrics=metrics,
+                                        generator=generator,
+                                        window_size=config.window_size,
+                                        overlap=config.overlap)
 
         comp.add_exp(params_ids=param_pack, experiment=experiment)
 
     df = comp.execute(complete_size=config.n_samples, fs=config.fs, n_runs=n_runs)
     df.to_pickle(f"{base_dir}.pkl")
-    df.to_latex(f"{base_dir}.tex", index_names=False)
+    df.style.hide(axis="index").to_latex(f"{base_dir}.tex")
     print(df)
+
 
 
 

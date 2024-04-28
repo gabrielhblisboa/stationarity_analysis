@@ -185,8 +185,8 @@ class AmplitudeTransitionType(enum.Enum):
             transition_start -= transition_samples//2
             transition_end += transition_samples//2
 
-            limits = [[transition_start, transition_end - transition_samples],
-                      [transition_start + transition_samples, transition_end]]
+            limits = [[transition_start, transition_start + transition_samples],
+                      [transition_end - transition_samples, transition_end]]
 
             for n in range(1, transition_samples):
 

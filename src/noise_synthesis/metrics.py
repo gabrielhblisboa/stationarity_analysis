@@ -35,11 +35,12 @@ class DataEstimator(enum.Enum):
             return DataEstimator._estimate_pdf(window1, window2, n_bins=n_points)
 
         if self == DataEstimator.FFT:
-            frequencies, power1 = syn_noise.psd(signal=window1, fs=1, window_size=n_points*2)
-            _, power2 = syn_noise.psd(signal=window2, fs=1, window_size=n_points*2)
+            frequencies, power1 = syn_noise.psd(signal=window1, fs=52734, window_size=n_points*2, db_unity=False)
+            _, power2 = syn_noise.psd(signal=window2, fs=52734, window_size=n_points*2, db_unity=False)
 
             # return power1/np.sum(power1), power2/np.sum(power2), frequencies
-            return power1, power2, frequencies
+            # return power1, power2, frequencies
+            return power1 - np.min(power1), power2 - np.min(power2), frequencies
 
         raise NotImplementedError(f"apply {str(self)} not implemented")
     
@@ -114,6 +115,8 @@ class Metrics():
 
     def calc_block(self, window1: np.array, window2: np.array) -> float:
         pdf1, pdf2, _ = self.estimator.apply(window1, window2, self.n_points)
+        # print('pdf1: ', np.min(pdf1), ' ', np.mean(pdf1), ' ', np.max(pdf1))
+        # print('pdf2: ', np.min(pdf2), ' ', np.mean(pdf2), ' ', np.max(pdf2))
         return self.type.apply(pdf1, pdf2)
 
     def calc_data(self, data: np.array, window_size: int, overlap: float = 0) -> typing.Tuple[np.array, np.array]:

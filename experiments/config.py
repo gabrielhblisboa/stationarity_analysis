@@ -16,4 +16,4 @@ memory_size = 32
 threshold = 2.5
 noise = syn_signals.SyntheticSignal.Type.PINK
 
-n_runs=250
+n_runs=100

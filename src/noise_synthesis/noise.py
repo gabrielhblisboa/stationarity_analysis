@@ -92,7 +92,7 @@ def generate_noise(frequencies: np.array, psd_db: np.array, n_samples: int, fs: 
     out_noise = scipy.lfilter(coeficient, 1, noise)
     return out_noise[order:]
 
-def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0.5) \
+def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0.5, db_unity = True) \
         -> [np.array, np.array]:
     """Estimate the power spectrum density (PSD) for input signal.
 
@@ -121,7 +121,8 @@ def psd(signal: np.array, fs: float, window_size: int = 1024, overlap: float = 0
                                 axis=-1,
                                 average='mean')
 
-    intensity = 20 * np.log10(intensity)
+    if db_unity:
+        intensity = 20 * np.log10(intensity)
 
     # removendo DC
     return freqs[1:], intensity[1:]
