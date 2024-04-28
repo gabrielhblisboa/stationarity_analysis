@@ -47,7 +47,7 @@ def main():
     for combination in combinations:
         param_pack = dict(zip(params.keys(), combination))
 
-        metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERTEIN,
+        metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERSTEIN,
                                     estimator=syn_metrics.DataEstimator.PDF,
                                     n_points=param_pack['n_points'])
         signal = syn_signals.SyntheticSignal(type=param_pack['Signal'])

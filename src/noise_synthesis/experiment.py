@@ -17,11 +17,13 @@ import noise_synthesis.detector as syn_detector
 class Experiment():
 
     def __init__(self,
+                 output_base_name: str,
                  generator: syn_signals.Generator,
                  metrics: syn_metrics.Metrics,
                  detector: syn_detector.Detector,
                  window_size: int,
                  overlap: float,) -> None:
+        self.output_base_name = output_base_name
         self.generator = generator
         self.metrics = metrics
         self.detector = detector
@@ -90,9 +92,11 @@ class Experiment():
         TP = np.array(TP)
         FP = np.array(FP)
 
-        return f'{np.mean(TP)*100:.2f} ± {np.std(TP)*100:.2f}', \
-                f'{np.mean(FP)*100:.2f} ± {np.std(FP)*100:.2f}'
-
+        df = pd.DataFrame({'TP': TP, 'FP': FP})
+        df.to_csv(f'{self.output_base_name}.csv', index=False)
+ 
+        return f'{np.mean(TP)*100:.2f} ± {np.std(TP)*100:.2f} \%'.replace('.',','), \
+                f'{np.mean(FP)*100:.2f} ± {np.std(FP)*100:.2f} \%'.replace('.',',')
 
 class Comparator():
 
@@ -156,7 +160,7 @@ class Comparator():
         headers = list(set(headers))
 
         columns = headers.copy()
-        columns.extend(['TP', 'FP'])
+        columns.extend(['Prob. Detecção', 'Falso Alarme'])
 
         results_df = pd.DataFrame(columns=columns)
 
@@ -173,8 +177,8 @@ class Comparator():
                 else:
                     result_dict[header] = ' - '
 
-            result_dict['TP'] = tp
-            result_dict['FP'] = fp
+            result_dict['Prob. Detecção'] = tp
+            result_dict['Falso Alarme'] = fp
 
             results_df = pd.concat([results_df, pd.DataFrame(result_dict, index=[0])],
                                     ignore_index=True)

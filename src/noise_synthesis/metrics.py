@@ -13,11 +13,11 @@ import arch.unitroot as arch_root
 import noise_synthesis.noise as syn_noise
 
 class DataEstimator(enum.Enum):
-    PDF = 0,
+    PDF = 0
     FFT = 1
 
     def __str__(self) -> str:
-        return str(self.name).rsplit(".", maxsplit=1)[-1].replace("_", " ")
+        return '\\ac{' + str(self.name).rsplit(".", maxsplit=1)[-1].lower() + '}'
 
     def _estimate_pdf(window1, window2, n_bins) -> typing.Tuple[np.array, np.array, np.array]:
 
@@ -38,9 +38,11 @@ class DataEstimator(enum.Enum):
             frequencies, power1 = syn_noise.psd(signal=window1, fs=1, window_size=n_points*2)
             _, power2 = syn_noise.psd(signal=window2, fs=1, window_size=n_points*2)
 
-            return power1/np.sum(power1), power2/np.sum(power2), frequencies
+            # return power1/np.sum(power1), power2/np.sum(power2), frequencies
+            return power1, power2, frequencies
 
         raise NotImplementedError(f"apply {str(self)} not implemented")
+    
 
     def plot(self, filename, window1, window2, n_points, label1 = "window 1", label2 = "window 2") -> None:
         y1, y2, x = self.apply(window1, window2, n_points)
@@ -74,26 +76,27 @@ class DataEstimator(enum.Enum):
 class Metrics():
 
     class Type(enum.Enum):
-        KL_DIVERGENCE = 0,
+        KL_DIVERGENCE = 0
         SYMMETRIC_KL_DIVERGENCE = 1
-        WASSERTEIN = 2
+        WASSERSTEIN = 2
         JENSEN_SHANNON = 3
 
         def __str__(self) -> str:
-            return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
+            labels = ['\\ac{kl}', '\\ac{kl} simétrica', '\\ac{jsd}', '\\ac{wasserstein}']
+            return labels[self.value]
 
         def apply(self, pdf1, pdf2) -> float:
 
             if self == Metrics.Type.KL_DIVERGENCE:
-                pdf1 = np.where(pdf1 == 0, 1e-10, pdf1)
-                pdf2 = np.where(pdf2 == 0, 1e-10, pdf2)
+                pdf1 = np.where(pdf1 < 1e-10, 1e-10, pdf1)
+                pdf2 = np.where(pdf2 < 1e-10, 1e-10, pdf2)
                 return np.sum(scipy.special.kl_div(pdf1, pdf2))
 
             if self == Metrics.Type.SYMMETRIC_KL_DIVERGENCE:
                 return np.max([Metrics.Type.KL_DIVERGENCE.apply(pdf1, pdf2),
                                Metrics.Type.KL_DIVERGENCE.apply(pdf2, pdf1)])
         
-            if self == Metrics.Type.WASSERTEIN:
+            if self == Metrics.Type.WASSERSTEIN:
                 return scipy.stats.wasserstein_distance(pdf1, pdf2)
             
             if self == Metrics.Type.JENSEN_SHANNON:
@@ -140,7 +143,8 @@ class StatisticTest(Metrics):
         PhillipsPerron = 2
 
         def __str__(self) -> str:
-            return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
+            labels = ['\\ac{adf}', '\\ac{kpss}', '\\ac{pp}']
+            return labels[self.value]
 
     def __init__(self, type: Type) -> None:
         super().__init__(type, None, None)

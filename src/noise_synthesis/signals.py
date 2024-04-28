@@ -2,6 +2,7 @@ import abc
 import enum
 import typing
 import os
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,9 @@ import scipy.io.wavfile as wav_file
 
 import noise_synthesis.noise as syn_noise
 import noise_synthesis.metrics as syn_metrics
+
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
 
 class Signal(abc.ABC):
 
@@ -44,7 +48,7 @@ class SyntheticSignal(Signal):
         HIGH = 6
 
         def __str__(self) -> str:
-            return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ") + " noise"
+            return str(self.name).rsplit(".", maxsplit=1)[-1].capitalize().replace("_", " ")
 
     def __init__(self, type: Type) -> None:
         super().__init__()
@@ -114,11 +118,11 @@ class RealSignal(Signal):
         FISH_BOAT = 4       #47     x16 gain
         MUSSEL_BOAT = 5     #75     x64 gain
         DREDGER = 6         #94     x16 gain
-        DREDGER2 = 7        #95     x16 gain
+        DREDGER_2 = 7       #95     x16 gain
                                     #sensitivity = -193.5 dB
 
         def __str__(self) -> str:
-            return str(self.name).rsplit(".", maxsplit=1)[-1].lower()
+            return str(self.name).rsplit(".", maxsplit=1)[-1].capitalize().replace("_"," ")
 
     def __init__(self, type: Type) -> None:
         super().__init__()
@@ -156,6 +160,7 @@ class AmplitudeTransitionType(enum.Enum):
     ABRUPT = 0
     LINEAR = 1
     SINUSOIDAL = 2
+    SIGMOIDAL = 3
 
     def __str__(self) -> str:
         return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ")
@@ -189,6 +194,8 @@ class AmplitudeTransitionType(enum.Enum):
                     factor = (n / transition_samples)
                 elif self == AmplitudeTransitionType.SINUSOIDAL:
                     factor = np.cos(np.pi/2 * (n / transition_samples))
+                elif self == AmplitudeTransitionType.SINUSOIDAL:
+                    factor = sigmoid((n / transition_samples - 0.5) * 10)
 
                 output[transition_start+n] = factor * signal1[transition_start+n] + \
                                             (1-factor) * signal2[transition_start+n]
