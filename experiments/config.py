@@ -9,7 +9,7 @@ psd_db = -np.log10(fs/2)*20  # psd de um ruido branco de variancia 1
 end_psd_db = psd_db + 6
 
 
-window_size = 32*1024
+window_size = 16*1024
 overlap = 0.75
 n_points = 64
 memory_size = 32
