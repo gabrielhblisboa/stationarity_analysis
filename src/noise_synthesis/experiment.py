@@ -152,12 +152,13 @@ class Comparator():
 
     def execute(self, complete_size: int, fs: float, n_runs = 100, label = "Experiment"):
 
-        headers = []
-        for param_pack in self.experiment_params:
-            for key, value in param_pack.items():
-                headers.append(key)
+        headers = list(self.experiment_params[0].keys())
+        # headers = []
+        # for param_pack in self.experiment_params:
+        #     for key, value in param_pack.items():
+        #         headers.append(key)
 
-        headers = list(set(headers))
+        # headers = list(set(headers))
 
         columns = headers.copy()
         columns.extend(['Prob. Detecção', 'Falso Alarme'])

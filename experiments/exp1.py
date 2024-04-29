@@ -21,10 +21,10 @@ def main(n_runs: int):
     os.makedirs(base_dir, exist_ok = True)
 
     params = {
+        '': syn_metrics.Metrics.Type,
         'Sinal': [syn_signals.SyntheticSignal.Type.WHITE,
                    syn_signals.SyntheticSignal.Type.BROWN,
                    syn_signals.SyntheticSignal.Type.PINK],
-        '': syn_metrics.Metrics.Type
     }
 
     comp = syn_exp.Comparator()

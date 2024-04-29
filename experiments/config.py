@@ -16,4 +16,7 @@ memory_size = 32
 threshold = 2.5
 noise = syn_signals.SyntheticSignal.Type.PINK
 
+selected_overlap = 0.9
+selected_n_points = 256
+
 n_runs=100

@@ -21,10 +21,11 @@ def main(n_runs: int):
     os.makedirs(base_dir, exist_ok = True)
 
     params = {
-        'Sinal': [syn_signals.SyntheticSignal.Type.WHITE,
-                  syn_signals.SyntheticSignal.Type.BROWN,
-                  syn_signals.SyntheticSignal.Type.PINK],
-        '': syn_metrics.Metrics.Type
+        '': [syn_metrics.Metrics.Type.WASSERSTEIN, syn_metrics.Metrics.Type.JENSEN_SHANNON],
+        'Sinal': [syn_signals.SyntheticSignal.Type.LOW,
+                   syn_signals.SyntheticSignal.Type.MEDIUM_LOW,
+                   syn_signals.SyntheticSignal.Type.MEDIUM_HIGH,
+                   syn_signals.SyntheticSignal.Type.HIGH],
     }
 
     comp = syn_exp.Comparator()
@@ -34,7 +35,7 @@ def main(n_runs: int):
         param_pack = dict(zip(params.keys(), combination))
 
         metrics = syn_metrics.Metrics(type=param_pack[''],
-                                      estimator=syn_metrics.DataEstimator.FFT,
+                                      estimator=syn_metrics.DataEstimator.PDF,
                                       n_points=config.n_points)
         signal=syn_signals.SyntheticSignal(type=param_pack['Sinal'])
         generator = syn_signals.Generator(signal1=signal,

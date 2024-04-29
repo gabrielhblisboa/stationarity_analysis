@@ -83,7 +83,7 @@ class Metrics():
         JENSEN_SHANNON = 3
 
         def __str__(self) -> str:
-            labels = ['\\ac{kl}', '\\ac{kl} simétrica', '\\ac{jsd}', '\\ac{wasserstein}']
+            labels = ['\\ac{kl}', '\\ac{kl} simétrica', '\\ac{wasserstein}', '\\ac{jsd}']
             return labels[self.value]
 
         def apply(self, pdf1, pdf2) -> float:
