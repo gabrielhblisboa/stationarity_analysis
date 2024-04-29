@@ -40,7 +40,9 @@ class Detector():
                 tp += 1
 
         outside = [results[x] for x in range(len(results)) if x not in valid_index]
+        # fp = np.sum(np.diff(outside))
         fp = np.sum(np.diff(outside) == 1)/len(outside)
-        tp /= len(intervals)
+        if len(intervals) != 0:
+            tp /= len(intervals)
 
         return tp, fp

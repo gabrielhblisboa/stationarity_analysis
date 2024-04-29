@@ -3,6 +3,7 @@ import enum
 import typing
 import os
 import math
+import random
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,7 +49,7 @@ class SyntheticSignal(Signal):
         HIGH = 6
 
         def __str__(self) -> str:
-            return str(self.name).rsplit(".", maxsplit=1)[-1].lower().replace("_", " ") + " noise"
+            return str(self.name).rsplit(".", maxsplit=1)[-1].capitalize().replace("_", " ")
 
     def __init__(self, type: Type) -> None:
         super().__init__()
@@ -118,7 +119,7 @@ class RealSignal(Signal):
         FISH_BOAT = 4       #47     x16 gain
         MUSSEL_BOAT = 5     #75     x64 gain
         DREDGER = 6         #94     x16 gain
-        DREDGER2 = 7        #95     x16 gain
+        DREDGER_2 = 7       #95     x16 gain
                                     #sensitivity = -193.5 dB
 
         def __str__(self) -> str:
@@ -153,7 +154,20 @@ class RealSignal(Signal):
         #aplicando o ganho desejado
         input = input * 10**(baseline_psd_db/20)
 
-        return input[:n_samples]
+        start = random.randint(0, len(input) -n_samples)
+        return input[start:start+n_samples]
+
+    def complete(self) -> np.array:
+
+        filename = os.path.join(os.path.dirname(__file__), "data", f'{str(self.type)}.wav')
+
+        if not os.path.exists(filename):
+            raise UnboundLocalError(f'File to {self} not found: {filename}')
+
+        fs, input = wav_file.read(filename)
+        input = input / 2**(32-1)-1
+
+        return input, fs
 
 
 class AmplitudeTransitionType(enum.Enum):
@@ -185,8 +199,8 @@ class AmplitudeTransitionType(enum.Enum):
             transition_start -= transition_samples//2
             transition_end += transition_samples//2
 
-            limits = [[transition_start, transition_end - transition_samples],
-                      [transition_start + transition_samples, transition_end]]
+            limits = [[transition_start, transition_start + transition_samples],
+                      [transition_end - transition_samples, transition_end]]
 
             for n in range(1, transition_samples):
 
@@ -194,8 +208,10 @@ class AmplitudeTransitionType(enum.Enum):
                     factor = (n / transition_samples)
                 elif self == AmplitudeTransitionType.SINUSOIDAL:
                     factor = np.cos(np.pi/2 * (n / transition_samples))
-                elif self == AmplitudeTransitionType.SINUSOIDAL:
+                elif self == AmplitudeTransitionType.SIGMOIDAL:
                     factor = sigmoid((n / transition_samples - 0.5) * 10)
+                else:
+                    raise NotImplementedError(f'Interpolation facor for {self}')
 
                 output[transition_start+n] = factor * signal1[transition_start+n] + \
                                             (1-factor) * signal2[transition_start+n]

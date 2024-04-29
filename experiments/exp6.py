@@ -20,37 +20,39 @@ def main(n_runs: int):
     os.makedirs(base_dir, exist_ok = True)
 
     params = {
-        'overlap': [0, 0.25, 0.5, 0.75, 0.99] # config.window_size-1
+        # '': syn_metrics.Metrics.Type,
+        'Diferença de Intensidade (dB)': [0, 1, 2, 3, 6, 10],
     }
 
     comp = syn_exp.Comparator()
 
     combinations = list(itertools.product(*params.values()))
-    for combination in combinations:
+    for i, combination in enumerate(combinations):
         param_pack = dict(zip(params.keys(), combination))
 
         metrics = syn_metrics.Metrics(type=syn_metrics.Metrics.Type.WASSERSTEIN,
                                       estimator=syn_metrics.DataEstimator.PDF,
-                                      n_points=config.n_points)
+                                      n_points=config.selected_n_points)
         signal=syn_signals.SyntheticSignal(type=config.noise)
         generator = syn_signals.Generator(signal1=signal,
                                         psd_signal1=config.psd_db,
                                         signal2=signal,
-                                        psd_signal2=config.end_psd_db,
+                                        psd_signal2=config.psd_db + param_pack['Diferença de Intensidade (dB)'],
                                         transition=syn_signals.AmplitudeTransitionType.ABRUPT)
         detector = syn_detector.Detector(memory_size=config.memory_size,
                                          threshold=config.threshold)
-        experiment = syn_exp.Experiment(detector=detector,
-                                      metrics=metrics,
-                                      generator=generator,
-                                      window_size=config.window_size,
-                                      overlap=param_pack['overlap'])
+        experiment = syn_exp.Experiment(output_base_name=f"{base_dir}/{i}",
+                                        detector=detector,
+                                        metrics=metrics,
+                                        generator=generator,
+                                        window_size=config.window_size,
+                                        overlap=config.overlap)
 
         comp.add_exp(params_ids=param_pack, experiment=experiment)
 
-    df = comp.execute(complete_size=config.n_samples * 6, fs=config.fs, n_runs=n_runs)
+    df = comp.execute(complete_size=config.n_samples, fs=config.fs, n_runs=n_runs)
     df.to_pickle(f"{base_dir}.pkl")
-    df.to_latex(f"{base_dir}.tex", index_names=False)
+    df.style.hide(axis="index").to_latex(f"{base_dir}.tex")
     print(df)
 
 
