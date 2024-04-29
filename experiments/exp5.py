@@ -22,8 +22,8 @@ def main(n_runs: int):
 
     params = {
         'Estimador': syn_metrics.DataEstimator,
-        'Número de bins': [32, 64, 128, 256],
         '': [syn_metrics.Metrics.Type.WASSERSTEIN, syn_metrics.Metrics.Type.JENSEN_SHANNON],
+        'Número de bins': [32, 64, 128, 256],
     }
 
     comp = syn_exp.Comparator()

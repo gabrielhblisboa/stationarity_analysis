@@ -3,6 +3,7 @@ import enum
 import typing
 import os
 import math
+import random
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -122,7 +123,7 @@ class RealSignal(Signal):
                                     #sensitivity = -193.5 dB
 
         def __str__(self) -> str:
-            return str(self.name).rsplit(".", maxsplit=1)[-1].capitalize().replace("_"," ")
+            return str(self.name).rsplit(".", maxsplit=1)[-1].lower()
 
     def __init__(self, type: Type) -> None:
         super().__init__()
@@ -153,7 +154,20 @@ class RealSignal(Signal):
         #aplicando o ganho desejado
         input = input * 10**(baseline_psd_db/20)
 
-        return input[:n_samples]
+        start = random.randint(0, len(input) -n_samples)
+        return input[start:start+n_samples]
+
+    def complete(self) -> np.array:
+
+        filename = os.path.join(os.path.dirname(__file__), "data", f'{str(self.type)}.wav')
+
+        if not os.path.exists(filename):
+            raise UnboundLocalError(f'File to {self} not found: {filename}')
+
+        fs, input = wav_file.read(filename)
+        input = input / 2**(32-1)-1
+
+        return input, fs
 
 
 class AmplitudeTransitionType(enum.Enum):
@@ -194,8 +208,10 @@ class AmplitudeTransitionType(enum.Enum):
                     factor = (n / transition_samples)
                 elif self == AmplitudeTransitionType.SINUSOIDAL:
                     factor = np.cos(np.pi/2 * (n / transition_samples))
-                elif self == AmplitudeTransitionType.SINUSOIDAL:
+                elif self == AmplitudeTransitionType.SIGMOIDAL:
                     factor = sigmoid((n / transition_samples - 0.5) * 10)
+                else:
+                    raise NotImplementedError(f'Interpolation facor for {self}')
 
                 output[transition_start+n] = factor * signal1[transition_start+n] + \
                                             (1-factor) * signal2[transition_start+n]
@@ -215,17 +231,19 @@ class Generator():
                  psd_signal1: float,
                  signal2: SyntheticSignal,
                  psd_signal2: float,
-                 transition: AmplitudeTransitionType,) -> None:
+                 transition: AmplitudeTransitionType,
+                 transition_samples: typing.Union[int, float] = None) -> None:
         self.signal1 = signal1
         self.psd_signal1 = psd_signal1
         self.signal2 = signal2
         self.psd_signal2 = psd_signal2
         self.transition = transition
+        self.transition_samples = transition_samples
 
     def generate(self, complete_size: int, fs: float) -> typing.Tuple[np.array, typing.List[typing.Tuple[int, int]]]:
         signal1 = self.signal1.generate(complete_size, fs, self.psd_signal1)
         signal2 = self.signal2.generate(complete_size, fs, self.psd_signal2)
-        return self.transition.apply(signal1=signal1, signal2=signal2)
+        return self.transition.apply(signal1=signal1, signal2=signal2, transition_samples=self.transition_samples)
 
     def save_sample(self, file_basename: str, complete_size: int, fs: float) -> None:
         signal, _ = self.generate(complete_size=complete_size, fs=fs)

@@ -39,7 +39,7 @@ def main(n_runs = 5):
     }
 
     combinations = list(itertools.product(*params.values()))
-    for combination in tqdm.tqdm(combinations, desc='Experiments', leave=False):
+    for i, combination in enumerate(tqdm.tqdm(combinations, desc='Experiments', leave=False)):
         param_pack = dict(zip(params.keys(), combination))
 
         metrics = param_pack['Metrics']
@@ -51,7 +51,8 @@ def main(n_runs = 5):
                                         psd_signal2=baseline_psd_db,
                                         transition=syn_signals.AmplitudeTransitionType.ABRUPT)
         detector = syn_detector.Detector()
-        experiment = syn_exp.Experiment(detector=detector,
+        experiment = syn_exp.Experiment(output_base_name=f"{base_dir}/{i}",
+                                     detector=detector,
                                       metrics=metrics,
                                       generator=generator,
                                       window_size=4*1024,

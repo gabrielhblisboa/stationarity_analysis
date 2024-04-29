@@ -18,5 +18,7 @@ noise = syn_signals.SyntheticSignal.Type.PINK
 
 selected_overlap = 0.9
 selected_n_points = 256
+selected_jensen_n_points = 32
+selected_fft_n_points = 32
 
 n_runs=100

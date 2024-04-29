@@ -95,6 +95,9 @@ class Experiment():
         df = pd.DataFrame({'TP': TP, 'FP': FP})
         df.to_csv(f'{self.output_base_name}.csv', index=False)
  
+        if n_runs == 1:
+            return f'{np.mean(TP)*100:.2f} \%'.replace('.',','), \
+                    f'{np.mean(FP)*100:.2f} \%'.replace('.',',')
         return f'{np.mean(TP)*100:.2f} ± {np.std(TP)*100:.2f} \%'.replace('.',','), \
                 f'{np.mean(FP)*100:.2f} ± {np.std(FP)*100:.2f} \%'.replace('.',',')
 
