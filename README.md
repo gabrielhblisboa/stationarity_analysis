@@ -23,7 +23,7 @@ pip install -r requirements.txt
 
 ## Data
 
-The library can handle both synthetic data and real sonar recordings. Real data for testing is sourced from the [ShipsEar dataset](https://example.com/shipsear). You can also generate synthetic signals for controlled experiments.
+The library can handle both synthetic data and real sonar recordings. Real data for testing is sourced from the [ShipsEar dataset](https://underwaternoise.atlanttic.uvigo.es/indexDB.php). You can also generate synthetic signals for controlled experiments.
 
 ## Results
 
